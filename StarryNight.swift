@@ -3,6 +3,7 @@ import MetalKit
 import AVFoundation
 import CoreImage
 import UniformTypeIdentifiers
+import ImageIO
 
 func failure(_ message: String) -> NSError {
     NSError(domain: "StarryNight", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
@@ -13,16 +14,22 @@ struct Parameters {
     var strength: Float
     var aspect: Float
     var showMask: Float
+    var artwork: Float
+    var imageAspect: Float
 }
 
 final class Engine {
     let device: MTLDevice
     let queue: MTLCommandQueue
     let pipeline: MTLRenderPipelineState
-    let painting: MTLTexture
-    let mask: MTLTexture
+    var painting: MTLTexture
+    var mask: MTLTexture
+    var artwork: Artwork
+    let resources: URL
 
-    init(resources: URL) throws {
+    init(resources: URL, artwork: Artwork = .starryNight) throws {
+        self.resources = resources
+        self.artwork = artwork
         guard let device = MTLCreateSystemDefaultDevice(), let queue = device.makeCommandQueue() else {
             throw failure("这台 Mac 无法启动 Metal 图形引擎。")
         }
@@ -36,12 +43,38 @@ final class Engine {
         descriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
         pipeline = try device.makeRenderPipelineState(descriptor: descriptor)
         let loader = MTKTextureLoader(device: device)
-        painting = try loader.newTexture(URL: resources.appendingPathComponent("starrynight.jpg"),
-            options: [.SRGB: false, .origin: MTKTextureLoader.Origin.topLeft])
-        mask = try loader.newTexture(cgImage: Self.makeMask(), options: [.SRGB: false])
+        painting = try Self.loadPainting(resources: resources, artwork: artwork, loader: loader)
+        mask = try loader.newTexture(cgImage: Self.makeMask(artwork: artwork), options: [.SRGB: false])
     }
 
-    static func makeMask() throws -> CGImage {
+    func select(_ artwork: Artwork) throws {
+        let loader = MTKTextureLoader(device: device)
+        let image = try Self.loadPainting(resources: resources, artwork: artwork, loader: loader)
+        let region = try loader.newTexture(cgImage: Self.makeMask(artwork: artwork), options: [.SRGB: false])
+        painting = image
+        mask = region
+        self.artwork = artwork
+    }
+
+    static func crop(_ image: CGImage, artwork: Artwork) throws -> CGImage {
+        let bounds = artwork.imageBounds
+        let rect = CGRect(x: bounds.minX * Double(image.width), y: bounds.minY * Double(image.height),
+            width: bounds.width * Double(image.width), height: bounds.height * Double(image.height))
+        guard let cropped = image.cropping(to: rect) else { throw failure("无法读取画作区域。") }
+        return cropped
+    }
+
+    static func loadPainting(resources: URL, artwork: Artwork, loader: MTKTextureLoader) throws -> MTLTexture {
+        let url = resources.appendingPathComponent("\(artwork.filename).jpg")
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw failure("无法读取画作：\(artwork.title)")
+        }
+        return try loader.newTexture(cgImage: crop(image, artwork: artwork),
+            options: [.SRGB: false, .origin: MTKTextureLoader.Origin.topLeft])
+    }
+
+    static func makeMask(artwork: Artwork = .starryNight) throws -> CGImage {
         let width = 2048, height = 1622
         guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
             bytesPerRow: width*4, space: CGColorSpaceCreateDeviceRGB(),
@@ -60,6 +93,7 @@ final class Engine {
         }
         // Conservative contours keep the entire foreground, including small branches,
         // unchanged. The inward feather leaves a narrow quiet margin on the sky side.
+        if artwork == .starryNight {
         protect([(0,0.725),(0.045,0.731),(0.09,0.753),(0.15,0.753),(0.21,0.735),(0.29,0.700),
             (0.37,0.710),(0.41,0.687),(0.44,0.691),(0.47,0.715),(0.50,0.722),(0.54,0.713),(0.565,0.694),(0.592,0.658),
             (0.623,0.643),(0.651,0.627),(0.683,0.624),(0.713,0.633),(0.742,0.653),
@@ -82,6 +116,30 @@ final class Engine {
         protect([(0.267,0.7),(0.273,0.608),(0.282,0.574),(0.291,0.585),(0.302,0.621),(0.309,0.70),(0.327,0.75)])
         protect([(0.249,0.579),(0.289,0.558),(0.294,0.570),(0.261,0.610)])
         protect([(0.556,0.621),(0.567,0.621),(0.568,0.668),(0.578,0.783),(0.546,0.790),(0.552,0.708)])
+        } else if artwork == .waterLilies {
+            // Lily clusters are protected in image coordinates, leaving reflections free.
+            for (x,y,rx,ry) in [(0.10,0.07,0.17,0.07),(0.54,0.085,0.23,0.07),
+                (0.90,0.025,0.22,0.055),(0.74,0.26,0.28,0.07),
+                (0.81,0.41,0.25,0.08),(0.94,0.56,0.17,0.075),
+                (0.08,0.73,0.15,0.18),(0.28,0.78,0.16,0.085),
+                (0.60,0.78,0.23,0.085),(0.35,0.89,0.17,0.05),
+                (0.11,0.96,0.10,0.05)] {
+                ctx.setFillColor(CGColor(gray: 0, alpha: 1))
+                ctx.fillEllipse(in: CGRect(x:x-rx,y:y-ry,width:rx*2,height:ry*2))
+            }
+        } else if artwork == .wheatStacks {
+            protect([(0,0.24),(1,0.24),(1,1),(0,1)])
+        } else if artwork == .rhone {
+            protect([(0,0),(1,0),(1,0.49),(0.55,0.47),(0.30,0.51),(0,0.60)])
+            protect([(0,0.67),(0.35,0.76),(0.54,0.75),(0.70,0.78),(1,0.84),(1,1),(0,1)])
+            protect([(0.43,0.76),(0.48,0.51),(0.52,0.69),(0.55,0.72),(0.55,0.79)])
+        } else if artwork == .cypresses {
+            protect([(0,0.67),(0.12,0.61),(0.22,0.51),(0.30,0.56),
+                (0.45,0.55),(0.52,0.48),(0.65,0.49),(0.75,0.58),(1,0.53),
+                (1,0.72),(0,0.72)])
+            protect([(0.73,0.66),(0.74,0.37),(0.79,0.30),(0.81,0.13),
+                (0.835,0.07),(0.86,0.14),(0.89,0.47),(0.91,0.66)])
+        }
         guard let raw = ctx.makeImage() else { throw failure("无法生成天空区域。") }
         let expanded = CIImage(cgImage: raw).clampedToExtent()
             .applyingFilter("CIMorphologyMinimum", parameters: [kCIInputRadiusKey: 8])
@@ -89,7 +147,7 @@ final class Engine {
         guard let result = CIContext().createCGImage(expanded, from: CGRect(x:0,y:0,width:width,height:height)) else {
             throw failure("无法平滑天空边缘。")
         }
-        return result
+        return try crop(result, artwork: artwork)
     }
 
     @discardableResult
@@ -102,7 +160,8 @@ final class Engine {
         pass.colorAttachments[0].storeAction = .store
         guard let encoder = command.makeRenderCommandEncoder(descriptor: pass) else { throw failure("无法开始渲染。") }
         var parameters = Parameters(time:time, strength:strength,
-            aspect:Float(texture.width)/Float(texture.height), showMask:maskMode ? 1 : 0)
+            aspect:Float(texture.width)/Float(texture.height), showMask:maskMode ? 1 : 0,
+            artwork: Float(artwork.rawValue), imageAspect: Float(painting.width)/Float(painting.height))
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(painting, index: 0)
         encoder.setFragmentTexture(mask, index: 1)
@@ -132,7 +191,7 @@ final class Engine {
     }
 
     func snapshot(to url: URL, time: Float, maskMode: Bool = false) throws {
-        let width = 1280, height = 1014
+        let width = 1280, height = Int((1280.0 * Double(painting.height) / Double(painting.width)).rounded())
         let bytes = try pixels(time: time, maskMode: maskMode, width: width, height: height)
         let provider = CGDataProvider(data: bytes as CFData)!
         let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
@@ -265,11 +324,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var desktopButton: NSButton!
     var exportButton: NSButton!
     var exporting = false
+    var artworkPicker: NSPopUpButton!
+    var artworkCaption: NSTextField!
     var sleepPaused = false
     var statusTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        do { engine = try Engine(resources: Bundle.main.resourceURL!) }
+        let selected = Artwork(rawValue: UserDefaults.standard.integer(forKey: "artwork")) ?? .starryNight
+        do { engine = try Engine(resources: Bundle.main.resourceURL!, artwork: selected) }
         catch { showError(error); NSApp.terminate(nil); return }
         let defaults = UserDefaults.standard
         if defaults.object(forKey:"speed") != nil { animation.speed = min(2,max(0.25,defaults.float(forKey:"speed"))) }
@@ -321,8 +383,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         let content = NSView(); window.contentView = content
-        let title = label("让星空慢慢流动",size:22)
-        let caption = label("天空沿笔触旋转 · 柏树、山丘和村庄保持静止")
+        let title = label("让名画慢慢流动",size:22)
+        artworkPicker = NSPopUpButton(frame: .zero, pullsDown: false)
+        artworkPicker.addItems(withTitles: Artwork.allCases.map(\.title))
+        artworkPicker.selectItem(at: engine.artwork.rawValue)
+        artworkPicker.target = self
+        artworkPicker.action = #selector(changeArtwork)
+        artworkPicker.setAccessibilityLabel("选择画作")
+        let caption = label(engine.artwork.description)
+        artworkCaption = caption
         caption.textColor = .secondaryLabelColor
         preview = LiveView(engine:engine,animation:animation)
         speedLabel = label("")
@@ -340,13 +409,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         exportButton = button("导出循环视频…",action:#selector(exportMovie))
         let controls = NSStackView(views:[speedStack,strengthStack,pauseButton])
         controls.orientation = .horizontal; controls.spacing = 16; controls.alignment = .centerY
-        let maskButton = NSButton(checkboxWithTitle:"显示天空活动区域",target:self,action:#selector(toggleMask(_:)))
+        let maskButton = NSButton(checkboxWithTitle:"显示活动区域",target:self,action:#selector(toggleMask(_:)))
         statusLabel = label("",size:12)
         statusLabel.textColor = .secondaryLabelColor
         let settingsButton = button("系统壁纸设置…",action:#selector(openWallpaperSettings))
         let actions = NSStackView(views:[desktopButton,settingsButton,exportButton])
         actions.orientation = .horizontal; actions.spacing = 16
-        let stack = NSStackView(views:[title,caption,preview,controls,actions,maskButton,statusLabel])
+        let stack = NSStackView(views:[title,artworkPicker,caption,preview,controls,actions,maskButton,statusLabel])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(stack)
@@ -372,6 +441,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         redraw()
         refreshStatus()
     }
+    @objc func changeArtwork() {
+        let selected = Artwork.allCases[artworkPicker.indexOfSelectedItem]
+        do {
+            try engine.select(selected)
+            animation.phase = 0
+            artworkCaption.stringValue = selected.description
+            UserDefaults.standard.set(selected.rawValue, forKey: "artwork")
+            redraw()
+            refreshStatus()
+        } catch {
+            artworkPicker.selectItem(at: engine.artwork.rawValue)
+            showError(error)
+        }
+    }
     @objc func toggleMask(_ sender: NSButton) { animation.showMask = sender.state == .on; redraw() }
     @objc func togglePause() {
         let paused = !animation.paused
@@ -394,6 +477,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let defaults = UserDefaults.standard
         let pending = defaults.float(forKey:"appliedSpeed") != animation.speed
             || defaults.float(forKey:"appliedStrength") != animation.strength
+            || defaults.integer(forKey:"appliedArtwork") != engine.artwork.rawValue
         if pending { statusLabel.stringValue = "预览参数尚未应用；点击「应用到桌面与锁屏」更新两边的效果。" }
         else if WallpaperBridge.isSelected { statusLabel.stringValue = "系统壁纸已启用 · 登录自动恢复 · 退出控制面板后继续播放。" }
         else { statusLabel.stringValue = "在系统壁纸设置中选择「流动星夜」，并将屏幕保护程序设为与壁纸相同。" }
@@ -405,24 +489,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let speed = animation.speed, strength = animation.strength
             let screen = NSScreen.main?.frame.size ?? NSSize(width:16,height:10)
             let width = 2560, height = Int((2560*screen.height/screen.width/2).rounded())*2
-            exporting = true; desktopButton.isEnabled = false; exportButton.isEnabled = false
+            exporting = true; desktopButton.isEnabled = false; exportButton.isEnabled = false; artworkPicker.isEnabled = false
             statusLabel.stringValue = "正在准备桌面与锁屏使用的循环动画…"
             DispatchQueue.global(qos:.userInitiated).async { [self] in
                 do {
                     try engine.export(to:destination,width:width,height:height,speed:speed,strength:strength) { percent in
                         DispatchQueue.main.async { self.statusLabel.stringValue = "正在准备动画：\(Int(percent*100))%" }
                     }
-                    try WallpaperBridge.publish(destination,speed:speed,width:width,height:height)
+                    try WallpaperBridge.publish(destination,speed:speed,width:width,height:height, name: engine.artwork.title)
                     DispatchQueue.main.async {
                         let defaults = UserDefaults.standard
                         defaults.set(speed,forKey:"appliedSpeed"); defaults.set(strength,forKey:"appliedStrength")
+                        defaults.set(self.engine.artwork.rawValue,forKey:"appliedArtwork")
                         self.exporting = false; self.desktopButton.isEnabled = true; self.exportButton.isEnabled = true
+                        self.artworkPicker.isEnabled = true
                         self.refreshStatus()
                         if !WallpaperBridge.isSelected { WallpaperBridge.openSettings() }
                     }
                 } catch {
                     DispatchQueue.main.async {
                         self.exporting = false; self.desktopButton.isEnabled = true; self.exportButton.isEnabled = true
+                        self.artworkPicker.isEnabled = true
                         self.statusLabel.stringValue = "应用未完成，原有壁纸保持不变。"; self.showError(error)
                     }
                 }
@@ -438,11 +525,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard !exporting else { return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.mpeg4Movie]
-        panel.nameFieldStringValue = "starry-night-flow.mp4"
+        panel.nameFieldStringValue = "\(engine.artwork.filename)-flow.mp4"
         panel.directoryURL = Bundle.main.bundleURL.deletingLastPathComponent()
         panel.beginSheetModal(for:window) { [self] response in
             guard response == .OK, let url = panel.url else { return }
-            exporting = true; exportButton.isEnabled = false; desktopButton.isEnabled = false
+            exporting = true; exportButton.isEnabled = false; desktopButton.isEnabled = false; artworkPicker.isEnabled = false
             let speed = animation.speed, strength = animation.strength
             let screen = NSScreen.main?.frame.size ?? NSSize(width:16,height:10)
             let width = 3840, height = Int((3840*screen.height/screen.width/2).rounded())*2
@@ -453,12 +540,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     }
                     DispatchQueue.main.async {
                         self.exporting = false; self.exportButton.isEnabled = true; self.desktopButton.isEnabled = true
+                        self.artworkPicker.isEnabled = true
                         self.statusLabel.stringValue = "已导出 \(url.lastPathComponent)"
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 } catch {
                     DispatchQueue.main.async {
                         self.exporting = false; self.exportButton.isEnabled = true; self.desktopButton.isEnabled = true
+                        self.artworkPicker.isEnabled = true
                         self.statusLabel.stringValue = "导出未完成，可重试。"; self.showError(error)
                     }
                 }
@@ -467,7 +556,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     func showError(_ error: Error) { let alert = NSAlert(error:error); alert.runModal() }
     @objc func about() {
-        NSApp.orderFrontStandardAboutPanel(options:[.applicationName:"流动星夜",.applicationVersion:"2.0",
+        NSApp.orderFrontStandardAboutPanel(options:[.applicationName:"流动星夜",
+            .applicationVersion:Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "",
             .credits:NSAttributedString(string:"本地动画制作与原生桌面、锁屏壁纸。\n壁纸扩展基于 Phosphene（MIT，© 2026 kageroumado）。")])
     }
     @objc func quit() { NSApp.terminate(nil) }
@@ -488,7 +578,12 @@ let args = CommandLine.arguments
 if args.count>1 {
     do {
         let resources = Bundle.main.resourceURL!
-        let engine = try Engine(resources:resources)
+        let selected: Artwork
+        if let index = args.firstIndex(of: "--artwork"), index + 1 < args.count,
+           let artwork = Artwork.allCases.first(where: { $0.filename == args[index + 1] }) {
+            selected = artwork
+        } else { selected = .starryNight }
+        let engine = try Engine(resources:resources, artwork: selected)
         if args[1] == "--snapshot", args.count>=4 {
             try engine.snapshot(to:URL(fileURLWithPath:args[2]),time:Float(args[3]) ?? 0,
                 maskMode:args.contains("--mask"))
@@ -511,17 +606,45 @@ if args.count>1 {
             // Compare protected samples to the untouched source and to a later frame.
             let protected = [(260,300),(260,600),(380,840),(800,880),(1050,730),(1200,640),
                 (718,650),(720,700),(550,725),(150,800),(347,575)]
-            for (x,y) in protected {
+            for (x,y) in selected == .starryNight ? protected : [] {
                 guard pixelDifference(first,original,x,y)==0 && pixelDifference(first,middle,x,y)==0 else {
                     throw failure("Foreground moved at \(x),\(y)")
+                }
+            }
+            let anchors: [(Double, Double)]
+            switch selected {
+            case .starryNight: anchors = []
+            case .waterLilies: anchors = [(0.74,0.26),(0.81,0.41),(0.60,0.78)]
+            case .wheatStacks: anchors = [(0.43,0.55),(0.22,0.60),(0.80,0.75)]
+            case .rhone: anchors = [(0.77,0.86),(0.22,0.49),(0.50,0.70)]
+            case .cypresses: anchors = [(0.84,0.30),(0.50,0.60),(0.23,0.65)]
+            }
+            let outputAspect = 1280.0/1014.0
+            let imageAspect = Double(engine.painting.width)/Double(engine.painting.height)
+            for (sourceX,sourceY) in anchors {
+                let bounds = selected.imageBounds
+                let px = (sourceX-bounds.minX)/bounds.width
+                let py = (sourceY-bounds.minY)/bounds.height
+                let x = Int((outputAspect > imageAspect ? px : (px-0.5)*imageAspect/outputAspect+0.5)*1280)
+                let y = Int((outputAspect > imageAspect ? (py-0.5)*outputAspect/imageAspect+0.5 : py)*1014)
+                if x >= 0 && x < 1280 && y >= 0 && y < 1014 {
+                    guard pixelDifference(first,original,x,y)==0 && pixelDifference(first,middle,x,y)==0 else {
+                        throw failure("Protected subject moved at \(px),\(py)")
+                    }
                 }
             }
             var changes=0
             for y in stride(from:40,to:500,by:20) { for x in stride(from:450,to:1200,by:20) {
                 if pixelDifference(first,middle,x,y)>5 { changes += 1 }
             } }
-            guard changes>200 else { throw failure("Insufficient sky motion: \(changes)") }
-            print("PASS: exact loop endpoints; protected foreground unchanged; \(changes) sky samples moving")
+            if selected != .starryNight {
+                changes = 0
+                for i in stride(from:0,to:first.count,by:4) {
+                    if abs(Int(first[i])-Int(middle[i])) > 2 { changes += 1 }
+                }
+            }
+            guard changes>200 else { throw failure("Insufficient motion: \(changes)") }
+            print("PASS: \(selected.filename); exact loop endpoints; \(changes) samples moving")
         } else { throw failure("Unknown arguments") }
     } catch { fputs("\(error.localizedDescription)\n",stderr); exit(1) }
 } else {

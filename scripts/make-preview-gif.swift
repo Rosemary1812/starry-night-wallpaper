@@ -17,11 +17,18 @@ generator.appliesPreferredTrackTransform = true
 generator.maximumSize = CGSize(width: 720, height: 720)
 generator.requestedTimeToleranceBefore = .zero
 generator.requestedTimeToleranceAfter = .zero
+let frameCount = 96
+let duration = CMTimeGetSeconds(asset.duration)
+guard duration.isFinite, duration > 0 else {
+    fputs("Input video has no finite duration\n", stderr)
+    exit(1)
+}
+let frameDuration = duration / Double(frameCount)
 
 guard let destination = CGImageDestinationCreateWithURL(
     outputURL as CFURL,
     UTType.gif.identifier as CFString,
-    36,
+    frameCount,
     nil
 ) else {
     fputs("Cannot create \(outputURL.path)\n", stderr)
@@ -29,7 +36,7 @@ guard let destination = CGImageDestinationCreateWithURL(
 }
 
 let frameProperties = [kCGImagePropertyGIFDictionary: [
-    kCGImagePropertyGIFDelayTime: 1.0 / 12.0,
+    kCGImagePropertyGIFDelayTime: frameDuration,
 ]] as CFDictionary
 let fileProperties = [kCGImagePropertyGIFDictionary: [
     kCGImagePropertyGIFLoopCount: 0,
@@ -37,8 +44,8 @@ let fileProperties = [kCGImagePropertyGIFDictionary: [
 
 CGImageDestinationSetProperties(destination, fileProperties)
 
-for frame in 0..<36 {
-    let time = CMTime(value: Int64(frame), timescale: 12)
+for frame in 0..<frameCount {
+    let time = CMTime(seconds: Double(frame) * frameDuration, preferredTimescale: 600)
     let image = try generator.copyCGImage(at: time, actualTime: nil)
     CGImageDestinationAddImage(destination, image, frameProperties)
 }

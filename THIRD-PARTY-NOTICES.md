@@ -1,5 +1,17 @@
 # Third-party notices
 
+## Artwork images
+
+The additional artwork reproductions are downloaded by `scripts/fetch-artworks.sh`.
+They are bundled in local builds and downloadable application packages, but are not tracked in Git.
+
+- Claude Monet, *Water Lilies*, 1906, Art Institute of Chicago, 1933.1157. Museum CC0 image via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Water_Lilies_-_1933.1157_-_Art_Institute_of_Chicago.jpg).
+- Claude Monet, *Stacks of Wheat (Sunset, Snow Effect)*, 1890–91, Art Institute of Chicago, 1922.431. Museum CC0 image via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Stacks_of_Wheat_(Sunset,_Snow_Effect)_-_1922.431_-_Art_Institute_of_Chicago.jpg).
+- Vincent van Gogh, *Starry Night Over the Rhône*, 1888, Musée d'Orsay. Public domain reproduction via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Starry_Night_Over_the_Rhone.jpg).
+- Vincent van Gogh, *Wheat Field with Cypresses*, 1889, The Metropolitan Museum of Art, 1993.132. [Public domain museum image](https://www.metmuseum.org/art/collection/search/436535).
+
+## Wallpaper extension
+
 The Swift files and bridging header in `WallpaperExtension/` are derived from
 [Phosphene](https://github.com/kageroumado/phosphene), commit
 `8b5bd57c1450eda74cf2ec6ceaae2e586cfdfcd6`, copyright (c) 2026 kageroumado,

@@ -6,6 +6,8 @@ struct Parameters {
     float strength;
     float aspect;
     float showMask;
+    float artwork;
+    float imageAspect;
 };
 struct VertexOut { float4 position [[position]]; float2 uv; };
 
@@ -54,7 +56,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
     constant Parameters &u [[buffer(0)]]) {
     constexpr sampler s(coord::normalized, address::clamp_to_edge, filter::linear);
     float2 p = in.uv;
-    const float imageAspect = 4096.0/3243.0;
+    float imageAspect = u.imageAspect;
     // Aspect fill is identical in preview, export and desktop windows.
     if(u.aspect>imageAspect) p.y=(p.y-.5)*imageAspect/u.aspect+.5;
     else p.x=(p.x-.5)*u.aspect/imageAspect+.5;
@@ -62,6 +64,25 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
     float m = maskAt(mask,p);
     if(u.showMask>.5) return float4(mix(original.rgb, float3(.23,.80,.96),m*.65),1);
     if(m<.001 || u.strength==0.0) return original;
+    float angle = fract(u.time/24.0) * (2.0 * M_PI_F);
+    if (u.artwork > .5) {
+        float2 offset = float2(0);
+        float light = 1.0;
+        if (u.artwork < 1.5) {
+            offset = float2(.0025*sin(p.y*45.0+angle), .0012*cos(p.x*28.0-angle));
+        } else if (u.artwork < 2.5) {
+            offset = float2(.0008*sin(p.y*18.0+angle), .0005*cos(p.x*15.0-angle));
+            light += .025*sin(angle)*m*u.strength;
+        } else if (u.artwork < 3.5) {
+            offset = float2(.003*sin(p.y*80.0+angle*2.0), .0008*cos(p.x*24.0-angle));
+        } else {
+            float sky = 1.0-smoothstep(.40,.65,p.y);
+            offset = mix(float2(.003*sin(p.x*30.0+angle), .001*sin(p.x*30.0+angle)),
+                float2(.004*sin(p.y*18.0+angle), .0015*cos(p.x*15.0-angle)),sky);
+        }
+        float2 samplePoint = clamp(p+offset*u.strength*m,0.0,1.0);
+        return float4(mix(original.rgb,painting.sample(s,samplePoint).rgb,m)*light,1);
+    }
     // Two half-cycle-offset advections dissolve only when their reset is invisible.
     // Both the image and its temporal derivative match after one full cycle.
     float phase = fract(u.time/24.0);

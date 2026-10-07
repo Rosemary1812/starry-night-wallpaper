@@ -34,12 +34,12 @@ enum WallpaperBridge {
         try FileManager.default.createDirectory(at:renders,withIntermediateDirectories:true)
         return renders.appendingPathComponent("render-\(UUID().uuidString).mp4")
     }
-    static func publish(_ video: URL, speed: Float, width: Int, height: Int) throws {
+    static func publish(_ video: URL, speed: Float, width: Int, height: Int, name: String) throws {
         struct Entry: Encodable {
             let id: String; let name: String; let filename: String
             let duration: Double; let fps: Double; let resolution: CGSize; let dateAdded: Date
         }
-        let entry = Entry(id:videoID,name:"流动星夜",filename:video.lastPathComponent,
+        let entry = Entry(id:videoID,name:name,filename:video.lastPathComponent,
             duration:24/Double(speed),fps:30,resolution:CGSize(width:width,height:height),dateAdded:Date())
         try JSONEncoder().encode(entry).write(to:renders.appendingPathComponent("metadata.json"),options:.atomic)
         let thumbnail = renders.appendingPathComponent("thumbnail.jpg")
