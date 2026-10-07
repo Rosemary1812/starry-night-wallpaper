@@ -34,11 +34,17 @@ Clouds and wheat move gently; the main cypress and middle hills remain still.
 
 ![Wheat Field with Cypresses animated preview](docs/media/cypresses.gif)
 
-## Control panel
+## Gallery control panel
 
-The panel lets you choose a painting and adjust flow speed and motion amplitude before applying a new loop. Wide screens crop the painting to fill the screen; the preview shows the same fill behavior.
+The gallery uses a black, white, and gray interface. Paintings retain their original colors. Select a painting from the thumbnail strip. The right panel shows the title, artist, year, flow speed, and motion amplitude.
 
-![Starry Night control panel with speed and amplitude controls](docs/media/settings-panel.png)
+The black **应用到桌面与锁屏** button applies the current preview. Export and system settings are secondary actions. The interface follows the Mac's light or dark appearance.
+
+![Light gallery interface with painting thumbnails and motion controls](docs/media/settings-panel.png)
+
+![Dark gallery interface](docs/media/settings-panel-dark.png)
+
+These screenshots show the current source build on a Mac. The v0.2.0 downloadable app still has the earlier control panel.
 
 ## Download
 
@@ -62,9 +68,19 @@ The repository does not include the full-size source image or video that the bui
 
 ## Use
 
-Open `Starry Night.app`, choose a painting, and click **应用到桌面与锁屏** (Apply to Desktop and Lock Screen). In **System Settings > Wallpaper**, select **流动星夜**. Set the screen saver to use the same wallpaper for the lock-screen effect. Changing paintings or sliders updates only the preview until you apply again. The control panel is currently in Chinese.
+Open `Starry Night.app` and select a painting from the bottom thumbnail strip. You can also use Command-1 through Command-5. Adjust **流动速度** for speed and **变化幅度** for motion amplitude.
 
-You can also export an MP4 without changing the system wallpaper. Run `zsh scripts/verify-artworks.sh` to check loop endpoints, protected regions, and motion for all five paintings. Screenshots are written to `dist/evidence/`. These rendering checks do not test macOS lock-screen playback.
+Click **应用到桌面与锁屏** to apply the preview. In **System Settings > Wallpaper**, select **流动星夜**. Set the screen saver to use the same wallpaper for the lock-screen effect. Changing paintings or sliders updates only the preview until you apply again. The control panel is currently in Chinese.
+
+Wide screens crop the painting to fill the screen. The preview uses the same screen aspect ratio and fill behavior. **显示活动区域** highlights the animated regions in the preview. **暂停播放** pauses both the preview and the current dynamic wallpaper.
+
+Click **导出视频…** to export an MP4 without changing the system wallpaper.
+
+## Verify the source build
+
+After building the app, run `zsh scripts/verify-gallery.sh` to rebuild the control panel and check painting selection, slider values, and selection recovery after a busy state. The script captures five scenes across light and dark appearances and wide and narrow windows. Screenshots and layout data are written to `dist/gallery-evidence/`. The UI check does not apply a wallpaper or overwrite saved preview parameters.
+
+The script also runs `scripts/verify-artworks.sh` to check loop endpoints, protected-subject samples, and motion for all five paintings. Rendering screenshots are written to `dist/evidence/`. These checks do not test macOS lock-screen playback.
 
 ## License and attribution
 

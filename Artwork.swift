@@ -16,6 +16,12 @@ enum Artwork: Int, CaseIterable {
     var title: String {
         ["梵高 · 星空", "莫奈 · 睡莲", "莫奈 · 麦草堆：日落与雪景", "梵高 · 罗讷河上的星夜", "梵高 · 有柏树的麦田"][rawValue]
     }
+    var shortName: String {
+        ["星空", "睡莲", "麦草堆", "罗讷河上的星夜", "有柏树的麦田"][rawValue]
+    }
+    var artist: String { self == .waterLilies || self == .wheatStacks ? "克劳德·莫奈" : "文森特·梵高" }
+    var year: String { ["1889", "1906", "1890–1891", "1888", "1889"][rawValue] }
+    var name: String { title.components(separatedBy: " · ").last! }
     var description: String {
         ["天空沿笔触旋转 · 柏树、山丘和村庄保持静止",
          "水面与倒影轻轻荡漾 · 主要睡莲花簇保持静止",

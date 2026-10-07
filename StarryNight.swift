@@ -324,10 +324,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var desktopButton: NSButton!
     var exportButton: NSButton!
     var exporting = false
-    var artworkPicker: NSPopUpButton!
+    var artworkCards: [ArtworkCard] = []
+    var artworkTitle: NSTextField!
+    var artworkDetails: NSTextField!
     var artworkCaption: NSTextField!
     var sleepPaused = false
     var statusTimer: Timer?
+    var verificationOutput: URL?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let selected = Artwork(rawValue: UserDefaults.standard.integer(forKey: "artwork")) ?? .starryNight
@@ -345,6 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusTimer = Timer.scheduledTimer(withTimeInterval:3,repeats:true) { [weak self] _ in self?.refreshStatus() }
         refreshStatus()
         NSApp.activate(ignoringOtherApps:true)
+        if verificationOutput != nil { verifyGallery() }
     }
 
     func createMenu() {
@@ -367,66 +371,166 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem.menu = status
     }
 
-    func label(_ text: String, size: CGFloat = 14) -> NSTextField {
-        let view = NSTextField(labelWithString:text)
-        view.font = NSFont.systemFont(ofSize:size)
-        return view
-    }
     func button(_ text: String, action: Selector) -> NSButton {
         let b = NSButton(title:text,target:self,action:action); b.bezelStyle = .rounded; return b
     }
     func createWindow() {
-        window = NSWindow(contentRect:NSRect(x:0,y:0,width:1000,height:790),
+        window = NSWindow(contentRect:NSRect(x:0,y:0,width:1120,height:790),
             styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
         window.title = "流动星夜"
-        window.minSize = NSSize(width:740,height:660)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.backgroundColor = GalleryStyle.surface
+        window.minSize = NSSize(width:940,height:760)
         window.isReleasedWhenClosed = false
         window.delegate = self
-        let content = NSView(); window.contentView = content
-        let title = label("让名画慢慢流动",size:22)
-        artworkPicker = NSPopUpButton(frame: .zero, pullsDown: false)
-        artworkPicker.addItems(withTitles: Artwork.allCases.map(\.title))
-        artworkPicker.selectItem(at: engine.artwork.rawValue)
-        artworkPicker.target = self
-        artworkPicker.action = #selector(changeArtwork)
-        artworkPicker.setAccessibilityLabel("选择画作")
-        let caption = label(engine.artwork.description)
-        artworkCaption = caption
-        caption.textColor = .secondaryLabelColor
+        let content = GallerySurface(color: GalleryStyle.surface)
+        window.contentView = content
+        let brand = GalleryStyle.text("流动星夜", size: 22)
+        let subtitle = GalleryStyle.text("梵高与莫奈的动态画作", size: 13, color: .secondaryLabelColor)
+        let heading = GalleryStyle.column([brand, subtitle], spacing: 5)
+        let live = GalleryStyle.text("实时预览", size: 13, color: GalleryStyle.accent)
+        let header = GalleryStyle.row([heading, NSView(), live])
+
         preview = LiveView(engine:engine,animation:animation)
-        speedLabel = label("")
-        strengthLabel = label("")
+        preview.wantsLayer = true
+        preview.layer?.cornerRadius = 3
+        preview.layer?.masksToBounds = true
+        let stage = GallerySurface(color: GalleryStyle.canvas, radius: 12)
+        stage.addSubview(preview)
+        preview.translatesAutoresizingMaskIntoConstraints = false
+        let screen = NSScreen.main?.frame.size ?? NSSize(width: 16, height: 10)
+        let preferredWidth = preview.widthAnchor.constraint(equalTo: stage.widthAnchor, constant: -48)
+        preferredWidth.priority = .defaultHigh
+        NSLayoutConstraint.activate([
+            preview.centerXAnchor.constraint(equalTo: stage.centerXAnchor),
+            preview.centerYAnchor.constraint(equalTo: stage.centerYAnchor),
+            preview.widthAnchor.constraint(lessThanOrEqualTo: stage.widthAnchor, constant: -48),
+            preview.heightAnchor.constraint(lessThanOrEqualTo: stage.heightAnchor, constant: -48),
+            preview.widthAnchor.constraint(equalTo: preview.heightAnchor, multiplier: screen.width/screen.height),
+            preferredWidth,
+            stage.heightAnchor.constraint(greaterThanOrEqualToConstant: 380)
+        ])
+
+        artworkTitle = GalleryStyle.text(engine.artwork.name, size: 23)
+        artworkDetails = GalleryStyle.text("\(engine.artwork.artist) · \(engine.artwork.year)", size: 13, color: .secondaryLabelColor)
+        artworkCaption = GalleryStyle.text(engine.artwork.description, size: 14, color: .secondaryLabelColor)
+        let metadata = GalleryStyle.column([artworkTitle, artworkDetails], spacing: 8)
+        speedLabel = GalleryStyle.text("")
+        strengthLabel = GalleryStyle.text("")
+        speedLabel.font = .monospacedDigitSystemFont(ofSize: 14, weight: .regular)
+        strengthLabel.font = .monospacedDigitSystemFont(ofSize: 14, weight: .regular)
         speedSlider = NSSlider(value:Double(animation.speed),minValue:0.25,maxValue:2,target:self,action:#selector(changeValues))
         strengthSlider = NSSlider(value:Double(animation.strength),minValue:0,maxValue:2.5,target:self,action:#selector(changeValues))
         speedSlider.setAccessibilityLabel("流动速度")
-        strengthSlider.setAccessibilityLabel("旋转幅度")
-        let speedStack = NSStackView(views:[speedLabel,speedSlider]); speedStack.orientation = .vertical; speedStack.alignment = .leading
-        let strengthStack = NSStackView(views:[strengthLabel,strengthSlider]); strengthStack.orientation = .vertical; strengthStack.alignment = .leading
-        speedSlider.widthAnchor.constraint(equalToConstant:185).isActive = true
-        strengthSlider.widthAnchor.constraint(equalToConstant:185).isActive = true
-        pauseButton = button(animation.paused ? "继续" : "暂停",action:#selector(togglePause))
+        strengthSlider.setAccessibilityLabel("动效幅度")
+        speedSlider.trackFillColor = GalleryStyle.accent
+        strengthSlider.trackFillColor = GalleryStyle.accent
+        let speedRow = GalleryStyle.row([GalleryStyle.text("流动速度"), NSView(), speedLabel])
+        let strengthRow = GalleryStyle.row([GalleryStyle.text("变化幅度"), NSView(), strengthLabel])
+        let speedStack = GalleryStyle.column([speedRow, speedSlider], spacing: 6)
+        let strengthStack = GalleryStyle.column([strengthRow, strengthSlider], spacing: 6)
+        let sliders = GalleryStyle.column([speedStack, strengthStack], spacing: 18)
+        pauseButton = button(animation.paused ? "继续播放" : "暂停播放",action:#selector(togglePause))
+        pauseButton.image = NSImage(systemSymbolName: animation.paused ? "play.fill" : "pause.fill", accessibilityDescription: nil)
+        pauseButton.imagePosition = .imageLeading
+        pauseButton.toolTip = "暂停或继续预览与当前动态壁纸"
+        pauseButton.controlSize = .large
         desktopButton = button("应用到桌面与锁屏",action:#selector(applyWallpaper))
-        exportButton = button("导出循环视频…",action:#selector(exportMovie))
-        let controls = NSStackView(views:[speedStack,strengthStack,pauseButton])
-        controls.orientation = .horizontal; controls.spacing = 16; controls.alignment = .centerY
+        desktopButton.bezelColor = GalleryStyle.primaryAction
+        desktopButton.contentTintColor = .white
+        desktopButton.controlSize = .large
+        desktopButton.font = .systemFont(ofSize: 14, weight: .medium)
+        desktopButton.attributedTitle = NSAttributedString(string: desktopButton.title, attributes: [
+            .font: NSFont.systemFont(ofSize: 14, weight: .medium), .foregroundColor: NSColor.white
+        ])
+        exportButton = button("导出视频…",action:#selector(exportMovie))
+        exportButton.isBordered = false
+        exportButton.font = .systemFont(ofSize: 13)
+        exportButton.image = NSImage(systemSymbolName: "square.and.arrow.up", accessibilityDescription: nil)
+        exportButton.imagePosition = .imageLeading
         let maskButton = NSButton(checkboxWithTitle:"显示活动区域",target:self,action:#selector(toggleMask(_:)))
-        statusLabel = label("",size:12)
-        statusLabel.textColor = .secondaryLabelColor
-        let settingsButton = button("系统壁纸设置…",action:#selector(openWallpaperSettings))
-        let actions = NSStackView(views:[desktopButton,settingsButton,exportButton])
-        actions.orientation = .horizontal; actions.spacing = 16
-        let stack = NSStackView(views:[title,artworkPicker,caption,preview,controls,actions,maskButton,statusLabel])
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 12
+        maskButton.font = .systemFont(ofSize: 13)
+        maskButton.tintProminence = .none
+        statusLabel = GalleryStyle.text("", size: 13, color: .secondaryLabelColor)
+        let settingsButton = button("壁纸设置…",action:#selector(openWallpaperSettings))
+        settingsButton.isBordered = false
+        settingsButton.font = .systemFont(ofSize: 13)
+        settingsButton.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
+        settingsButton.imagePosition = .imageLeading
+        let secondaryActions = GalleryStyle.row([exportButton, NSView(), settingsButton], spacing: 4)
+        let actions = GalleryStyle.column([statusLabel, desktopButton, secondaryActions], spacing: 12)
+        let spacer = NSView()
+        let inspector = GalleryStyle.column([metadata, artworkCaption, sliders, pauseButton, maskButton, spacer, actions], spacing: 12)
+        inspector.setCustomSpacing(20, after: artworkCaption)
+        inspector.setCustomSpacing(8, after: pauseButton)
+        inspector.setCustomSpacing(0, after: maskButton)
+        inspector.setCustomSpacing(16, after: spacer)
+        inspector.widthAnchor.constraint(equalToConstant: 258).isActive = true
+        let inspectorScroll = NSScrollView()
+        inspectorScroll.drawsBackground = false
+        inspectorScroll.hasVerticalScroller = true
+        inspectorScroll.autohidesScrollers = true
+        inspectorScroll.documentView = inspector
+        inspector.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            inspectorScroll.widthAnchor.constraint(equalToConstant: 258),
+            inspector.leadingAnchor.constraint(equalTo: inspectorScroll.contentView.leadingAnchor),
+            inspector.topAnchor.constraint(equalTo: inspectorScroll.contentView.topAnchor),
+            inspector.heightAnchor.constraint(greaterThanOrEqualTo: inspectorScroll.heightAnchor)
+        ])
+        let body = GalleryStyle.row([stage, inspectorScroll], spacing: 24)
+        body.alignment = .top
+
+        let collectionHeading = GalleryStyle.row([
+            GalleryStyle.text("画作集", size: 14), NSView(),
+            GalleryStyle.text("5 幅作品", size: 13, color: .secondaryLabelColor)
+        ])
+        let strip = GalleryStyle.row([], spacing: 12)
+        do {
+            for artwork in Artwork.allCases {
+                let card = try ArtworkCard(artwork: artwork, resources: engine.resources, target: self, action: #selector(changeArtwork(_:)))
+                artworkCards.append(card)
+                strip.addArrangedSubview(card)
+            }
+        } catch { showError(error) }
+        let scroll = NSScrollView()
+        scroll.drawsBackground = false
+        scroll.hasHorizontalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.documentView = strip
+        strip.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            strip.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            strip.topAnchor.constraint(equalTo: scroll.contentView.topAnchor),
+            strip.heightAnchor.constraint(equalToConstant: 128),
+            scroll.heightAnchor.constraint(equalToConstant: 140)
+        ])
+        let collection = GalleryStyle.column([collectionHeading, scroll], spacing: 10)
+        let stack = GalleryStyle.column([header, body, collection], spacing: 20)
         stack.translatesAutoresizingMaskIntoConstraints = false
         content.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo:content.leadingAnchor,constant:22),
-            stack.trailingAnchor.constraint(equalTo:content.trailingAnchor,constant:-22),
-            stack.topAnchor.constraint(equalTo:content.topAnchor,constant:18),
-            stack.bottomAnchor.constraint(equalTo:content.bottomAnchor,constant:-18),
-            preview.widthAnchor.constraint(equalTo:stack.widthAnchor),
-            preview.heightAnchor.constraint(greaterThanOrEqualToConstant:300)])
-        preview.setContentHuggingPriority(.defaultLow,for:.vertical)
+            stack.leadingAnchor.constraint(equalTo:content.leadingAnchor,constant:24),
+            stack.trailingAnchor.constraint(equalTo:content.trailingAnchor,constant:-24),
+            stack.topAnchor.constraint(equalTo:content.topAnchor,constant:12),
+            stack.bottomAnchor.constraint(equalTo:content.bottomAnchor,constant:-16),
+            stage.heightAnchor.constraint(equalTo: body.heightAnchor),
+            inspectorScroll.heightAnchor.constraint(equalTo: body.heightAnchor),
+            desktopButton.heightAnchor.constraint(equalToConstant: 40),
+            pauseButton.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        for view in [header, body, collection] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        let inspectorViews: [NSView] = [metadata, artworkTitle, artworkDetails, artworkCaption, sliders,
+                     speedStack, strengthStack, speedRow, strengthRow, speedSlider, strengthSlider,
+                     pauseButton, actions, statusLabel, desktopButton, secondaryActions]
+        for view in inspectorViews {
+            view.widthAnchor.constraint(equalTo: inspector.widthAnchor).isActive = true
+        }
+        collectionHeading.widthAnchor.constraint(equalTo: collection.widthAnchor).isActive = true
+        scroll.widthAnchor.constraint(equalTo: collection.widthAnchor).isActive = true
+        body.setContentHuggingPriority(.defaultLow, for: .vertical)
+        updateArtworkSelection()
         changeValues()
         window.center(); window.makeKeyAndOrderFront(nil)
         redraw()
@@ -434,24 +538,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func changeValues() {
         animation.speed = Float(speedSlider.doubleValue)
         animation.strength = Float(strengthSlider.doubleValue)
-        speedLabel.stringValue = String(format:"流速  %.2f×",animation.speed)
-        strengthLabel.stringValue = String(format:"幅度  %.0f%%",animation.strength*100)
-        UserDefaults.standard.set(animation.speed,forKey:"speed")
-        UserDefaults.standard.set(animation.strength,forKey:"strength")
+        speedLabel.stringValue = String(format:"%.2f×",animation.speed)
+        strengthLabel.stringValue = String(format:"%.0f%%",animation.strength*100)
+        if verificationOutput == nil {
+            UserDefaults.standard.set(animation.speed,forKey:"speed")
+            UserDefaults.standard.set(animation.strength,forKey:"strength")
+        }
         redraw()
         refreshStatus()
     }
-    @objc func changeArtwork() {
-        let selected = Artwork.allCases[artworkPicker.indexOfSelectedItem]
+    func updateArtworkSelection() {
+        artworkTitle.stringValue = engine.artwork.name
+        artworkDetails.stringValue = "\(engine.artwork.artist) · \(engine.artwork.year)"
+        artworkCaption.stringValue = engine.artwork.description
+        for card in artworkCards {
+            card.state = card.artwork == engine.artwork ? .on : .off
+            card.needsDisplay = true
+        }
+    }
+    func setArtworkSelectionEnabled(_ enabled: Bool) {
+        for card in artworkCards { card.isEnabled = enabled; card.needsDisplay = true }
+    }
+    @objc func changeArtwork(_ sender: ArtworkCard) {
+        let selected = sender.artwork
         do {
             try engine.select(selected)
             animation.phase = 0
-            artworkCaption.stringValue = selected.description
-            UserDefaults.standard.set(selected.rawValue, forKey: "artwork")
+            updateArtworkSelection()
+            if verificationOutput == nil { UserDefaults.standard.set(selected.rawValue, forKey: "artwork") }
             redraw()
             refreshStatus()
         } catch {
-            artworkPicker.selectItem(at: engine.artwork.rawValue)
+            updateArtworkSelection()
             showError(error)
         }
     }
@@ -461,7 +579,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         do { try WallpaperBridge.setPaused(paused) }
         catch { showError(error); return }
         animation.paused = paused
-        pauseButton.title = animation.paused ? "继续" : "暂停"
+        pauseButton.title = animation.paused ? "继续播放" : "暂停播放"
+        pauseButton.image = NSImage(systemSymbolName: animation.paused ? "play.fill" : "pause.fill", accessibilityDescription: nil)
         redraw()
     }
     func redraw() {
@@ -478,9 +597,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let pending = defaults.float(forKey:"appliedSpeed") != animation.speed
             || defaults.float(forKey:"appliedStrength") != animation.strength
             || defaults.integer(forKey:"appliedArtwork") != engine.artwork.rawValue
-        if pending { statusLabel.stringValue = "预览参数尚未应用；点击「应用到桌面与锁屏」更新两边的效果。" }
-        else if WallpaperBridge.isSelected { statusLabel.stringValue = "系统壁纸已启用 · 登录自动恢复 · 退出控制面板后继续播放。" }
-        else { statusLabel.stringValue = "在系统壁纸设置中选择「流动星夜」，并将屏幕保护程序设为与壁纸相同。" }
+        if pending { statusLabel.stringValue = "预览有新变化，应用后更新桌面与锁屏。" }
+        else if WallpaperBridge.isSelected { statusLabel.stringValue = "壁纸已启用，关闭窗口后仍会播放。" }
+        else { statusLabel.stringValue = "在壁纸设置中选择「流动星夜」，屏幕保护程序设为与壁纸相同。" }
     }
     @objc func applyWallpaper() {
         guard !exporting else { return }
@@ -489,7 +608,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let speed = animation.speed, strength = animation.strength
             let screen = NSScreen.main?.frame.size ?? NSSize(width:16,height:10)
             let width = 2560, height = Int((2560*screen.height/screen.width/2).rounded())*2
-            exporting = true; desktopButton.isEnabled = false; exportButton.isEnabled = false; artworkPicker.isEnabled = false
+            exporting = true; desktopButton.isEnabled = false; exportButton.isEnabled = false; setArtworkSelectionEnabled(false)
             statusLabel.stringValue = "正在准备桌面与锁屏使用的循环动画…"
             DispatchQueue.global(qos:.userInitiated).async { [self] in
                 do {
@@ -502,14 +621,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                         defaults.set(speed,forKey:"appliedSpeed"); defaults.set(strength,forKey:"appliedStrength")
                         defaults.set(self.engine.artwork.rawValue,forKey:"appliedArtwork")
                         self.exporting = false; self.desktopButton.isEnabled = true; self.exportButton.isEnabled = true
-                        self.artworkPicker.isEnabled = true
+                        self.setArtworkSelectionEnabled(true)
                         self.refreshStatus()
                         if !WallpaperBridge.isSelected { WallpaperBridge.openSettings() }
                     }
                 } catch {
                     DispatchQueue.main.async {
                         self.exporting = false; self.desktopButton.isEnabled = true; self.exportButton.isEnabled = true
-                        self.artworkPicker.isEnabled = true
+                        self.setArtworkSelectionEnabled(true)
                         self.statusLabel.stringValue = "应用未完成，原有壁纸保持不变。"; self.showError(error)
                     }
                 }
@@ -529,7 +648,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         panel.directoryURL = Bundle.main.bundleURL.deletingLastPathComponent()
         panel.beginSheetModal(for:window) { [self] response in
             guard response == .OK, let url = panel.url else { return }
-            exporting = true; exportButton.isEnabled = false; desktopButton.isEnabled = false; artworkPicker.isEnabled = false
+            exporting = true; exportButton.isEnabled = false; desktopButton.isEnabled = false; setArtworkSelectionEnabled(false)
             let speed = animation.speed, strength = animation.strength
             let screen = NSScreen.main?.frame.size ?? NSSize(width:16,height:10)
             let width = 3840, height = Int((3840*screen.height/screen.width/2).rounded())*2
@@ -540,14 +659,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     }
                     DispatchQueue.main.async {
                         self.exporting = false; self.exportButton.isEnabled = true; self.desktopButton.isEnabled = true
-                        self.artworkPicker.isEnabled = true
+                        self.setArtworkSelectionEnabled(true)
                         self.statusLabel.stringValue = "已导出 \(url.lastPathComponent)"
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 } catch {
                     DispatchQueue.main.async {
                         self.exporting = false; self.exportButton.isEnabled = true; self.desktopButton.isEnabled = true
-                        self.artworkPicker.isEnabled = true
+                        self.setArtworkSelectionEnabled(true)
                         self.statusLabel.stringValue = "导出未完成，可重试。"; self.showError(error)
                     }
                 }
@@ -575,7 +694,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 struct StarryNightMain {
 static func main() {
 let args = CommandLine.arguments
-if args.count>1 {
+if args.count>1 && args[1] != "--ui-check" {
     do {
         let resources = Bundle.main.resourceURL!
         let selected: Artwork
@@ -651,6 +770,9 @@ if args.count>1 {
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
     let delegate = AppDelegate()
+    if args.count == 3, args[1] == "--ui-check" {
+        delegate.verificationOutput = URL(fileURLWithPath: args[2], isDirectory: true)
+    }
     app.delegate = delegate
     app.run()
 }
