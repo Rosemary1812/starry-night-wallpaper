@@ -1,27 +1,35 @@
 # Starry Night Wallpaper
 
-An experimental macOS 26 wallpaper extension with a Metal control panel. It turns a supplied image and looping video into a dynamic wallpaper and lock-screen option.
+[简体中文](README.zh-CN.md)
 
-This project uses private macOS APIs. It is for personal development and research. It is not suitable for the Mac App Store, is not notarized, and can stop working after a macOS update.
+An experimental macOS 26 dynamic wallpaper extension with a Metal control panel. It animates a user-supplied image and looping video for the desktop and lock screen.
 
-## Requirements
+![Animated Starry Night preview](docs/media/starry-night-preview.gif)
 
-- Apple Silicon Mac running macOS 26.
-- Xcode Command Line Tools.
-- A legally usable image named `starrynight.jpg` and a looping video named `starry-night-flow.mp4`.
+## Control panel
 
-The repository does not include artwork or video. You must obtain or create assets that you have the right to use. Do not add them to Git.
+The panel lets you adjust the flow speed and rotation amplitude before you apply a new loop to the wallpaper.
 
-## Build
+![Starry Night control panel with speed and amplitude controls](docs/media/settings-panel.png)
+
+## Download
+
+Download [Starry Night v0.1.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.1.0) for Apple Silicon Macs running macOS 26. The release includes a ZIP archive and a SHA-256 checksum.
+
+This build uses private macOS APIs. It is not notarized and is not suitable for the Mac App Store. macOS may require you to Control-click the app in Finder and select **Open**. A future macOS update can stop the extension from working.
+
+## Build from source
+
+You need an Apple Silicon Mac running macOS 26, Xcode Command Line Tools, a legally usable image, and a looping video.
 
 1. Create `assets/`.
 2. Put the image at `assets/starrynight.jpg`.
 3. Put the video at `assets/starry-night-flow.mp4`.
 4. Run `zsh build.sh`.
 
-The build creates `Starry Night.app` in the repository. It signs the bundle with an ad hoc signature. The script does not install the app or change your wallpaper.
+The build creates `Starry Night.app` in the repository and signs it with an ad hoc signature. It does not install the app or change your wallpaper. To keep assets elsewhere, set `STARRY_ASSETS_DIR` to the directory that contains both files before you run the build.
 
-To keep assets elsewhere, set `STARRY_ASSETS_DIR` to the directory that contains both files before you run the build.
+The repository does not include the full-size source image or video that the build needs. The documentation media is a reduced-size preview only. Use assets that you have the right to distribute.
 
 ## Use
 
