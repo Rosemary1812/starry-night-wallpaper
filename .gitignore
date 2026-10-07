@@ -2,4 +2,5 @@
 .module-cache/
 Starry Night.app/
 assets/
+dist/
 *.xcarchive/
