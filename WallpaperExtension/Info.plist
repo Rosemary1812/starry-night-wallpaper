@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>local.starrynight.flow.extension</string>
+<key>CFBundleExecutable</key><string>StarryWallpaper</string>
+<key>CFBundleName</key><string>流动星夜</string>
+<key>CFBundleDisplayName</key><string>流动星夜</string>
+<key>CFBundlePackageType</key><string>XPC!</string>
+<key>CFBundleShortVersionString</key><string>2.0</string>
+<key>CFBundleVersion</key><string>2</string>
+<key>LSMinimumSystemVersion</key><string>26.0</string>
+<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+<key>CFBundleSupportedPlatforms</key><array><string>MacOSX</string></array>
+<key>XPCService</key><dict><key>ServiceType</key><string>Application</string><key>RunLoopType</key><string>NSRunLoop</string></dict>
+<key>EXAppExtensionAttributes</key><dict>
+<key>EXExtensionPointIdentifier</key><string>com.apple.wallpaper</string>
+</dict></dict></plist>
