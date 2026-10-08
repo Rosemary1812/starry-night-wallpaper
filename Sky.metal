@@ -80,6 +80,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float wave = (sin(phase+angle) + .28*sin(p.y*104.0-angle*2.0+p.x*5.0+.7))/1.28;
             offset = float2((.00055+.00028*depth)*wave,
                 .00010*depth*sin(p.y*37.0+angle+p.x*5.0));
+            offset *= 4.0;
             // END motion: water-lilies
         } else if (u.artwork < 2.5) {
             // BEGIN motion: wheat-stacks
@@ -87,7 +88,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float warmX = (p.x-.66)/.40;
             float warmY = (p.y-.105)/.13;
             float evening = exp(-warmX*warmX-warmY*warmY);
-            light += .0032*sin(angle+.6*p.x)*evening*m*u.strength;
+            light += .0128*sin(angle+.6*p.x)*evening*m*u.strength;
             // END motion: wheat-stacks
         } else if (u.artwork < 3.5) {
             // BEGIN motion: rhone
@@ -100,6 +101,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float wave = (sin(phase-angle)+.22*sin(phase*1.75-angle*2.0+p.x*11.0+.8))/1.22;
             offset = float2(.00085*(.25+.75*depth)*shore*wave,
                 .00008*depth*shore*cos(phase*.61-angle+p.x*6.0));
+            offset *= 4.0;
             // END motion: rhone
         } else if (u.artwork < 4.5) {
             // BEGIN motion: cypresses
@@ -124,6 +126,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float tips = smoothstep(.68,.81,p.y)*(1.0-smoothstep(.90,.97,p.y));
             float wind = (sin(p.x*12.0-p.y*5.0-angle)+.25*sin(p.x*21.0+p.y*9.0-angle*2.0+.5))/1.25;
             offset = float2(mix(.00055*tips*wind,cloudX,sky), mix(.00018*tips*wind,cloudY,sky));
+            offset *= 4.0;
             // END motion: cypresses
         } else if (u.artwork < 5.5) {
             // BEGIN motion: impression-sunrise
@@ -150,6 +153,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
                 + .000095*reflection*sin(p.y*122.0-angle*.9));
             offset = float2(water*boatQuiet*(broadSlip+smallRipples+foregroundTexture+reflectionSlip), vertical);
             light = 1.0;
+            offset *= 3.5;
             // END motion: impression-sunrise
         } else if (u.artwork < 6.5) {
             // BEGIN motion: waterloo-bridge
@@ -168,6 +172,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
                 * cos(p.x*17.0 + p.y*31.0 - angle*.8);
             offset = float2(horizontal, vertical);
             light = 1.0;
+            offset *= 3.5;
             // END motion: waterloo-bridge
         } else if (u.artwork < 7.5) {
             // BEGIN motion: nocturne-bognor
@@ -191,6 +196,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float vertical = sea*boatQuiet*.000055*nearSea*sin(p.x*15.0+p.y*20.0-angle*.65);
             offset = float2(horizontal, vertical);
             light = 1.0;
+            offset *= 3.5;
             // END motion: nocturne-bognor
         } else if (u.artwork < 8.5) {
             // BEGIN motion: approach-venice
@@ -216,6 +222,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             offset = float2(horizontal,vertical);
             // Let the original pigments create the shimmer. No illumination modulation.
             light = 1.0;
+            offset *= 3.5;
             // END motion: approach-venice
         } else if (u.artwork < 9.5) {
             // BEGIN motion: cliff-walk
@@ -244,6 +251,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float grassY = .000055*grass*sin(angle*1.7+p.x*5.0);
             offset = float2(skyX+seaX+grassX,skyY+seaY+grassY);
             light = 1.0;
+            offset *= 3.5;
             // END motion: cliff-walk
         } else if (u.artwork < 10.5) {
             // BEGIN motion: bridge-villeneuve
@@ -265,6 +273,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             float vertical = river*channel*quiet*.000070*nearWater*sin(p.y*152.0 + angle*1.1 + p.x*8.0);
             offset = float2(horizontal, vertical);
             light = 1.0;
+            offset *= 3.5;
             // END motion: bridge-villeneuve
         } else if (u.artwork < 11.5) {
             // BEGIN motion: parliament-sunset
@@ -288,19 +297,19 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
                 * sin(p.y*144.0-angle*.95+p.x*7.0);
             offset = float2(horizontal, vertical);
             light = 1.0;
+            offset *= 3.5;
             // END motion: parliament-sunset
         }
-        if (u.artwork < 4.5) {
-        // BEGIN sampling: refined-four
+        // BEGIN sampling: protected-motion
         float2 displacement = offset*u.strength*m;
-        float pathMask = min(maskAt(mask,p+displacement*.5),maskAt(mask,p+displacement));
+        float pathMask = m;
+        for (int step = 1; step <= 6; step++) {
+            pathMask = min(pathMask, maskAt(mask, p+displacement*(float(step)/6.0)));
+        }
         float pathSafety = smoothstep(0.0,.20,pathMask);
         float2 samplePoint = clamp(p+displacement*pathSafety,0.0,1.0);
         return float4(painting.sample(s,samplePoint).rgb*light,1);
-        // END sampling: refined-four
-        }
-        float2 samplePoint = clamp(p+offset*u.strength*m,0.0,1.0);
-        return float4(mix(original.rgb,painting.sample(s,samplePoint).rgb,m)*light,1);
+        // END sampling: protected-motion
     }
     // Two half-cycle-offset advections dissolve only when their reset is invisible.
     // Both the image and its temporal derivative match after one full cycle.

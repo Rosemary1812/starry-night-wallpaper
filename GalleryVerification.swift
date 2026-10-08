@@ -2,6 +2,33 @@ import AppKit
 import CoreText
 
 extension AppDelegate {
+    func verifyLivePreview() {
+        animation.paused = false
+        window.makeKeyAndOrderFront(nil)
+        var index = 0
+        var framesBefore = preview.presentedFrames
+        carousel.select(Artwork.allCases[index])
+        redraw()
+        Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [self] timer in
+            let artwork = Artwork.allCases[index]
+            guard engine.artwork == artwork, preview.presentedArtwork == artwork,
+                  preview.presentedFrames > framesBefore + 2,
+                  preview.alphaValue == 1, !preview.isPaused else {
+                fputs("FAIL: live preview \(artwork.filename); frames=\(preview.presentedFrames - framesBefore), alpha=\(preview.alphaValue), paused=\(preview.isPaused), presented=\(String(describing: preview.presentedArtwork))\n", stderr)
+                exit(1)
+            }
+            print("PASS: live preview \(artwork.filename); \(preview.presentedFrames - framesBefore) GPU frames, visible")
+            index += 1
+            if index == Artwork.allCases.count {
+                timer.invalidate()
+                NSApp.terminate(nil)
+                return
+            }
+            framesBefore = preview.presentedFrames
+            selectThumbnail(thumbnailRail.buttons[index])
+        }
+    }
+
     func writeViewSnapshot(_ view: NSView, to url: URL) throws {
         view.layoutSubtreeIfNeeded()
         guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
@@ -15,6 +42,10 @@ extension AppDelegate {
     }
 
     func verifyGallery() {
+        if ProcessInfo.processInfo.environment["STARRY_VERIFY_LIVE_PREVIEW"] == "1" {
+            verifyLivePreview()
+            return
+        }
         guard let output = verificationOutput else { return }
         AppLanguage.verificationLanguage = AppLanguage.current
         do { try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true) }

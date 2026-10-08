@@ -468,6 +468,8 @@ final class LiveView: MTKView, MTKViewDelegate {
     let animation: AnimationState
     private var revealGeneration = 0
     private var waitingToReveal = false
+    private(set) var presentedFrames = 0
+    private(set) var presentedArtwork: Artwork?
     init(engine: Engine, animation: AnimationState) {
         self.engine = engine; self.animation = animation
         super.init(frame: .zero, device: engine.device)
@@ -492,13 +494,15 @@ final class LiveView: MTKView, MTKViewDelegate {
     func draw(in view: MTKView) {
         guard let drawable = currentDrawable else { return }
         do {
-            var completion: MTLCommandBufferHandler?
-            if waitingToReveal {
-                let generation = revealGeneration
-                completion = { [weak self] buffer in
-                    guard buffer.status == .completed else { return }
-                    DispatchQueue.main.async { [weak self] in
-                        guard let self, waitingToReveal, revealGeneration == generation else { return }
+            let generation = revealGeneration
+            let artwork = engine.artwork
+            let completion: MTLCommandBufferHandler = { [weak self] buffer in
+                guard buffer.status == .completed else { return }
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    presentedFrames += 1
+                    presentedArtwork = artwork
+                    if waitingToReveal, revealGeneration == generation {
                         waitingToReveal = false
                         alphaValue = 1
                     }
@@ -619,15 +623,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         artworkCaption = GalleryStyle.text(engine.artwork.description, size: 13, color: .secondaryLabelColor)
         statusLabel = GalleryStyle.text("", size: 12, color: .secondaryLabelColor)
         statusLabel.alignment = .left
-        desktopButton = button(L10n.tr("button.setWallpaper"),action:#selector(applyWallpaper))
-        desktopButton.bezelColor = .controlAccentColor
-        desktopButton.controlSize = .regular
+        let primary = GalleryActionButton(title: L10n.tr("button.setWallpaper"), target: self, action: #selector(applyWallpaper))
+        primary.prominent = true
+        primary.font = .systemFont(ofSize: 13, weight: .medium)
+        primary.isBordered = false
+        desktopButton = primary
         desktopButton.keyEquivalent = "\r"
-        window.defaultButtonCell = desktopButton.cell as? NSButtonCell
-        adjustButton = button(L10n.tr("button.adjust"),action:#selector(showAdjustments(_:)))
+        adjustButton = GalleryActionButton(title: L10n.tr("button.adjust"), target: self, action: #selector(showAdjustments(_:)))
+        adjustButton.font = .systemFont(ofSize: 13)
         adjustButton.controlSize = .regular
         adjustButton.isBordered = false
-        moreButton = button("",action:#selector(showMore(_:)))
+        moreButton = GalleryActionButton(title: "", target: self, action: #selector(showMore(_:)))
         moreButton.controlSize = .regular
         moreButton.isBordered = false
         moreButton.image = NSImage(systemSymbolName: "ellipsis", accessibilityDescription: nil)

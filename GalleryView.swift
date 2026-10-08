@@ -41,6 +41,51 @@ enum GalleryStyle {
     }
 }
 
+final class GalleryActionButton: NSButton {
+    var prominent = false
+
+    override var intrinsicContentSize: NSSize {
+        let width = title.isEmpty ? 36 : ceil((title as NSString).size(withAttributes: [.font: font ?? NSFont.systemFont(ofSize: 13)]).width) + 28
+        return NSSize(width: width, height: 36)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let shape = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 7, yRadius: 7)
+        let dark = effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        let pressed = cell?.isHighlighted == true
+        let background: NSColor = prominent
+            ? (dark ? NSColor(calibratedWhite: pressed ? 0.75 : 0.90, alpha: 1) : NSColor(calibratedWhite: pressed ? 0.25 : 0.10, alpha: 1))
+            : NSColor.labelColor.withAlphaComponent(pressed ? 0.12 : 0.045)
+        (isEnabled ? background : background.withAlphaComponent(background.alphaComponent * 0.35)).setFill()
+        shape.fill()
+        if !prominent {
+            NSColor.labelColor.withAlphaComponent(isEnabled ? 0.10 : 0.04).setStroke()
+            shape.lineWidth = 1
+            shape.stroke()
+        }
+        let foreground = (prominent ? (dark ? NSColor.black : .white) : .labelColor)
+            .withAlphaComponent(isEnabled ? 1 : 0.35)
+        if title.isEmpty {
+            foreground.setFill()
+            for offset in [-5.0, 0, 5.0] {
+                NSBezierPath(ovalIn: NSRect(x: bounds.midX + offset - 1.25, y: bounds.midY - 1.25, width: 2.5, height: 2.5)).fill()
+            }
+        } else {
+            let attributes: [NSAttributedString.Key: Any] = [.font: font ?? NSFont.systemFont(ofSize: 13), .foregroundColor: foreground]
+            let size = (title as NSString).size(withAttributes: attributes)
+            (title as NSString).draw(at: NSPoint(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2), withAttributes: attributes)
+        }
+        if window?.firstResponder === self {
+            NSColor.labelColor.withAlphaComponent(0.5).setStroke()
+            let focus = NSBezierPath(roundedRect: bounds.insetBy(dx: 2, dy: 2), xRadius: 5, yRadius: 5)
+            focus.lineWidth = 1
+            focus.stroke()
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() { needsDisplay = true }
+}
+
 final class GallerySurface: NSView {
     let color: NSColor
     let radius: CGFloat
@@ -531,7 +576,7 @@ final class ExhibitionLayoutView: NSView {
         count.frame = NSRect(x: bounds.width - margin - 180, y: bounds.height - 39, width: 180, height: 20)
         count.alignment = .right
         let arrowWidth: CGFloat = 28
-        let buttonGap: CGFloat = 8
+        let buttonGap: CGFloat = 10
         let secondaryWidth = ceil(secondary.intrinsicContentSize.width)
         let moreWidth = max(26, ceil(more.intrinsicContentSize.width))
         let primaryWidth = ceil(primary.intrinsicContentSize.width)
