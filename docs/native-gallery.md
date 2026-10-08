@@ -58,12 +58,17 @@ single-character shortcut mapping. The carousel and thumbnail rail use
 
 Build the complete app and extension with `zsh build.sh`. On a Mac with the
 licensed source assets, run `zsh scripts/verify-gallery.sh`. The checks include
-75 pure motion assertions; 16 AppKit scenes for the five-artwork catalog;
+75 pure motion assertions; AppKit scenes for every registered painting in all three languages;
 three languages, wide/narrow windows, both appearances, the 999/1000-point
 breakpoint, actual font names and glyph coverage; six adjustment panels;
 slider updates and busy recovery; 210 simulated motion frames; and the actual
 run-loop animation timer. The script also runs the existing five-artwork Metal
 loop, movement, and protected-point checks.
+
+The translation tables also cover PR #2's seven additional paintings. See
+[twelve-painting localization integration](twelve-painting-localization.md) for
+the dependency pins, catalog-count guard, and separate validation of the
+five-painting base and twelve-painting integration.
 
 Output stays in ignored `dist/`. To encode the 105 sampled motion frames:
 
