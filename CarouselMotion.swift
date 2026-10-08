@@ -15,7 +15,7 @@ struct CarouselMotion {
     }
 
     mutating func reset(to index: Int) {
-        target = bounded(index)
+        target = index
         position = Double(target)
         velocity = 0
         phase = .idle
@@ -28,9 +28,7 @@ struct CarouselMotion {
 
     mutating func drag(by delta: Double, elapsed: Double) {
         guard phase == .dragging else { return }
-        let proposed = position + delta
-        let edge = min(Double(count - 1), max(0, proposed))
-        position = edge + (proposed - edge) * 0.32
+        position += delta
         let measured = delta / max(1.0 / 240, elapsed)
         let sameDirection = measured * velocity > 0 && elapsed < 0.1
         velocity = min(7, max(-7, sameDirection ? velocity * 0.25 + measured * 0.75 : measured))
@@ -43,7 +41,7 @@ struct CarouselMotion {
     }
 
     mutating func settle(to index: Int, reduceMotion: Bool) {
-        target = bounded(index)
+        target = index
         if reduceMotion { reset(to: target) }
         else { phase = .settling }
     }
@@ -67,5 +65,15 @@ struct CarouselMotion {
         }
     }
 
-    private func bounded(_ index: Int) -> Int { min(count - 1, max(0, index)) }
+    func artworkIndex(at slot: Int) -> Int { ((slot % count) + count) % count }
+
+    var selectedIndex: Int { artworkIndex(at: target) }
+
+    func nearestSlot(for index: Int) -> Int {
+        index + Int(((position - Double(index)) / Double(count)).rounded()) * count
+    }
+
+    mutating func select(index: Int, reduceMotion: Bool) {
+        settle(to: nearestSlot(for: index), reduceMotion: reduceMotion)
+    }
 }

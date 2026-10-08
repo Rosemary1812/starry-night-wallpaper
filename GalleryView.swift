@@ -193,7 +193,7 @@ final class ArtworkCarouselView: NSView {
 
     override func layout() {
         super.layout()
-        liveView.frame = cardRect(at: Double(selectedArtwork.rawValue))
+        liveView.frame = cardRect(at: Double(motion.nearestSlot(for: selectedArtwork.rawValue)))
     }
 
     private var cardSpacing: CGFloat {
@@ -213,7 +213,7 @@ final class ArtworkCarouselView: NSView {
         guard selectionEnabled else { return }
         lastDragPoint = nil
         scrolling = false
-        motion.settle(to: artwork.rawValue, reduceMotion: reduceMotion)
+        motion.select(index: artwork.rawValue, reduceMotion: reduceMotion)
         startSettling()
     }
 
@@ -228,14 +228,20 @@ final class ArtworkCarouselView: NSView {
                       width: scaled.width, height: scaled.height)
     }
 
+    private var visibleSlots: [Int] {
+        let radius = Int(ceil(bounds.width / cardSpacing)) + 2
+        let center = Int(motion.position.rounded())
+        return Array((center - radius)...(center + radius))
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         NSColor.clear.setFill()
         dirtyRect.fill()
-        let indices = Artwork.allCases.indices.sorted {
+        let indices = visibleSlots.sorted {
             abs(Double($0) - motion.position) > abs(Double($1) - motion.position)
         }
         for index in indices {
-            let artwork = Artwork.allCases[index]
+            let artwork = Artwork.allCases[motion.artworkIndex(at: index)]
             let rect = cardRect(at: Double(index))
             guard rect.intersects(bounds.insetBy(dx: -80, dy: -20)) else { continue }
             drawCardShadow(in: rect)
@@ -308,10 +314,10 @@ final class ArtworkCarouselView: NSView {
     override func mouseUp(with event: NSEvent) {
         guard selectionEnabled, lastDragPoint != nil else { return }
         let point = convert(event.locationInWindow, from: nil)
-        if dragDistance < 4, let index = Artwork.allCases.indices.min(by: {
+        if dragDistance < 4, let index = visibleSlots.min(by: {
             abs(Double($0) - motion.position) < abs(Double($1) - motion.position)
         }).flatMap({ nearest in
-            ([nearest] + Artwork.allCases.indices.filter { $0 != nearest }).first {
+            ([nearest] + visibleSlots.filter { $0 != nearest }).first {
                 cardRect(at: Double($0)).contains(point)
             }
         }) {
@@ -348,8 +354,9 @@ final class ArtworkCarouselView: NSView {
         guard selectionEnabled else { return }
         // AppKit momentum events are ignored; the spring owns motion after finger-up.
         guard event.momentumPhase.isEmpty else { return }
-        let delta = event.scrollingDeltaX
-        if !scrolling && abs(delta) <= abs(event.scrollingDeltaY) { return }
+        let delta = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY)
+            ? event.scrollingDeltaX : event.scrollingDeltaY
+        if !scrolling && delta == 0 { return }
         keyboardFocus = false
         if !scrolling {
             stopClock()
@@ -445,7 +452,7 @@ final class ArtworkCarouselView: NSView {
         let moving = motion.phase != .idle
         if moving && !wasMoving { liveView.concealForTransition() }
         if !moving {
-            let artwork = Artwork.allCases[motion.target]
+            let artwork = Artwork.allCases[motion.selectedIndex]
             if artwork != selectedArtwork { delegate?.artworkCarousel(self, didSelect: artwork) }
         }
         if moving != wasMoving {

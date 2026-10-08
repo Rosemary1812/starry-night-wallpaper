@@ -5,12 +5,13 @@ extension AppDelegate {
     func verifyLivePreview() {
         animation.paused = false
         window.makeKeyAndOrderFront(nil)
+        let artworks = Artwork.allCases + [.starryNight, Artwork.allCases.last!, .starryNight]
         var index = 0
         var framesBefore = preview.presentedFrames
-        carousel.select(Artwork.allCases[index])
+        carousel.select(artworks[index])
         redraw()
         Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [self] timer in
-            let artwork = Artwork.allCases[index]
+            let artwork = artworks[index]
             guard engine.artwork == artwork, preview.presentedArtwork == artwork,
                   preview.presentedFrames > framesBefore + 2,
                   preview.alphaValue == 1, !preview.isPaused else {
@@ -19,13 +20,13 @@ extension AppDelegate {
             }
             print("PASS: live preview \(artwork.filename); \(preview.presentedFrames - framesBefore) GPU frames, visible")
             index += 1
-            if index == Artwork.allCases.count {
+            if index == artworks.count {
                 timer.invalidate()
                 NSApp.terminate(nil)
                 return
             }
             framesBefore = preview.presentedFrames
-            selectThumbnail(thumbnailRail.buttons[index])
+            selectThumbnail(thumbnailRail.buttons[artworks[index].rawValue])
         }
     }
 
@@ -313,7 +314,7 @@ extension AppDelegate {
                 try writeViewSnapshot(window.contentView!, to: frames.appendingPathComponent(String(format: "%04d.png", frame / 2)))
             }
         }
-        guard carousel.motion.phase == .idle, carousel.motion.target == engine.artwork.rawValue else {
+        guard carousel.motion.phase == .idle, carousel.motion.selectedIndex == engine.artwork.rawValue else {
             throw failure("Interrupted input did not settle on the selected artwork")
         }
         selectThumbnail(thumbnailRail.buttons[Artwork.waterLilies.rawValue])
@@ -325,6 +326,24 @@ extension AppDelegate {
         selectPrevious()
         for _ in 0..<120 { carousel.advanceMotion(by: 1.0 / 60) }
         guard engine.artwork == .waterLilies else { throw failure("Previous arrow did not navigate") }
+        changeArtwork(to: Artwork.allCases.last!)
+        selectNext()
+        for _ in 0..<120 { carousel.advanceMotion(by: 1.0 / 60) }
+        guard engine.artwork == .starryNight, previousButton.isEnabled, nextButton.isEnabled else {
+            throw failure("Last-to-first navigation did not wrap")
+        }
+        try writeViewSnapshot(window.contentView!, to: output.appendingPathComponent("infinite-first.png"))
+        selectPrevious()
+        for _ in 0..<120 { carousel.advanceMotion(by: 1.0 / 60) }
+        guard engine.artwork == Artwork.allCases.last! else { throw failure("First-to-last navigation did not wrap") }
+        try writeViewSnapshot(window.contentView!, to: output.appendingPathComponent("infinite-last.png"))
+        selectThumbnail(thumbnailRail.buttons[0])
+        guard abs(Double(carousel.motion.target) - carousel.motion.position) <= 1 else {
+            throw failure("Thumbnail selection took the long way around the loop")
+        }
+        for _ in 0..<120 { carousel.advanceMotion(by: 1.0 / 60) }
+        guard engine.artwork == .starryNight else { throw failure("Thumbnail selection did not wrap") }
+        changeArtwork(to: .waterLilies)
         carousel.reduceMotionOverride = true
         arrow(true, frame: 210)
         guard carousel.motion.phase == .idle else { throw failure("Reduced motion left a spring running") }

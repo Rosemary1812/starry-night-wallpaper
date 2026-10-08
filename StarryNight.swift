@@ -688,8 +688,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
     }
 
     func refreshNavigation() {
-        previousButton?.isEnabled = !exporting && carousel.motion.target > 0
-        nextButton?.isEnabled = !exporting && carousel.motion.target < Artwork.allCases.count - 1
+        previousButton?.isEnabled = !exporting
+        nextButton?.isEnabled = !exporting
         for button in thumbnailRail?.buttons ?? [] { button.isEnabled = !exporting }
     }
 
@@ -704,8 +704,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         carousel?.selectionEnabled = enabled
         adjustButton?.isEnabled = enabled
         moreButton?.isEnabled = enabled
-        previousButton?.isEnabled = enabled && carousel.motion.target > 0
-        nextButton?.isEnabled = enabled && carousel.motion.target < Artwork.allCases.count - 1
+        previousButton?.isEnabled = enabled
+        nextButton?.isEnabled = enabled
         for button in thumbnailRail?.buttons ?? [] { button.isEnabled = enabled }
     }
     func artworkCarousel(_ carousel: ArtworkCarouselView, didSelect artwork: Artwork) {
