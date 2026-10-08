@@ -18,7 +18,7 @@ Water and reflections ripple gently; the main lily clusters stay still.
 
 ### Monet — Stacks of Wheat (Sunset, Snow Effect) (1890–91)
 
-The sky shifts and the sunset light breathes gently; the stacks and snow remain still.
+A faint local glow changes only in the warm part of the sky; the sky geometry, stacks and snow remain still.
 
 ![Stacks of Wheat animated preview](docs/media/wheat-stacks.gif)
 
@@ -81,6 +81,12 @@ Click **导出视频…** to export an MP4 without changing the system wallpaper
 After building the app, run `zsh scripts/verify-gallery.sh` to rebuild the control panel and check painting selection, slider values, and selection recovery after a busy state. The script captures five scenes across light and dark appearances and wide and narrow windows. Screenshots and layout data are written to `dist/gallery-evidence/`. The UI check does not apply a wallpaper or overwrite saved preview parameters.
 
 The script also runs `scripts/verify-artworks.sh` to check loop endpoints, protected-subject samples, and motion for all five paintings. Rendering screenshots are written to `dist/evidence/`. These checks do not test macOS lock-screen playback.
+
+### Refined original four
+
+Water Lilies now follows more precise lily contours with slower, mainly horizontal pond ripples. Stacks of Wheat has no geometric deformation and only very faint local sky luminance. The Rhône uses depth-dependent ripples with close boat/rigging protection. Cypresses follows painted cloud curls and small wheat-tip sways, keeping the mountain ridge, olive foliage and cypress still.
+
+These four sample a path-checked displacement without a second original-image dissolve, avoiding soft double edges. Their 24-second cycle and default controls stay compatible. Wheat's verification compares opposite light phases (6s/18s), counts any RGB difference at one quantization step, and requires more than 1,000 changed pixels; its former coarse blue-channel threshold would miss the intended subtle effect. Lossy video compression can introduce noise and obscure that tiny glow, so use lossless reference frames for pixel-level checks and verify the real AVFoundation export on a Mac.
 
 ## License and attribution
 

@@ -69,19 +69,66 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
         float2 offset = float2(0);
         float light = 1.0;
         if (u.artwork < 1.5) {
-            offset = float2(.0025*sin(p.y*45.0+angle), .0012*cos(p.x*28.0-angle));
+            // BEGIN motion: water-lilies
+            // Long, predominantly horizontal ripples; depth and local phase follow the pond.
+            float depth = smoothstep(.18,.92,p.y);
+            float phase = p.y*58.0 + .38*sin(p.x*4.3);
+            float wave = (sin(phase+angle) + .28*sin(p.y*104.0-angle*2.0+p.x*5.0+.7))/1.28;
+            offset = float2((.00055+.00028*depth)*wave,
+                .00010*depth*sin(p.y*37.0+angle+p.x*5.0));
+            // END motion: water-lilies
         } else if (u.artwork < 2.5) {
-            offset = float2(.0008*sin(p.y*18.0+angle), .0005*cos(p.x*15.0-angle));
-            light += .025*sin(angle)*m*u.strength;
+            // BEGIN motion: wheat-stacks
+            // The snow and haystacks stay still; only the existing warm sky changes subtly.
+            float warmX = (p.x-.66)/.40;
+            float warmY = (p.y-.105)/.13;
+            float evening = exp(-warmX*warmX-warmY*warmY);
+            light += .0032*sin(angle+.6*p.x)*evening*m*u.strength;
+            // END motion: wheat-stacks
         } else if (u.artwork < 3.5) {
-            offset = float2(.003*sin(p.y*80.0+angle*2.0), .0008*cos(p.x*24.0-angle));
+            // BEGIN motion: rhone
+            // Far ripples are smaller/denser; horizontal phase varies gently across the river.
+            float shoreX = (p.x-.02)/.23;
+            float shoreY = .49+.095*exp(-shoreX*shoreX);
+            float shore = smoothstep(shoreY,shoreY+.10,p.y);
+            float depth = smoothstep(.50,.83,p.y);
+            float phase = p.y*100.0-p.y*p.y*30.0+.40*sin(p.x*9.0);
+            float wave = (sin(phase-angle)+.22*sin(phase*1.75-angle*2.0+p.x*11.0+.8))/1.22;
+            offset = float2(.00085*(.25+.75*depth)*shore*wave,
+                .00008*depth*shore*cos(phase*.61-angle+p.x*6.0));
+            // END motion: rhone
         } else {
-            float sky = 1.0-smoothstep(.40,.65,p.y);
-            offset = mix(float2(.003*sin(p.x*30.0+angle), .001*sin(p.x*30.0+angle)),
-                float2(.004*sin(p.y*18.0+angle), .0015*cos(p.x*15.0-angle)),sky);
+            // BEGIN motion: cypresses
+            // Small tangential fields follow the painted cloud curls rather than sliding rows.
+            float c1x = (p.x-.235)/.26;
+            float c1y = (p.y-.28)/.20;
+            float c2x = (p.x-.57)/.25;
+            float c2y = (p.y-.22)/.19;
+            float c3x = (p.x-.64)/.20;
+            float c3y = (p.y-.43)/.15;
+            float curl1 = exp(-(c1x*c1x+c1y*c1y)*1.5)*.00068*sin(angle+.35);
+            float curl2 = exp(-(c2x*c2x+c2y*c2y)*1.5)*.00062*sin(angle+1.10);
+            float curl3 = exp(-(c3x*c3x+c3y*c3y)*1.5)*.00054*sin(angle-.60);
+            float cloudX = -c1y*curl1-c2y*curl2+c3y*curl3+.00022*sin(p.y*16.0+angle+p.x*.8);
+            float cloudY = (c1x*curl1+c2x*curl2-c3x*curl3)*.58;
+            // Approximate the sloped mountain/bush skyline; the exact subject mask is authoritative.
+            float hillX = (p.x-.58)/.24;
+            float bushX = (p.x-.22)/.12;
+            float skyline = .64-.12*exp(-hillX*hillX)-.09*exp(-bushX*bushX);
+            float sky = 1.0-smoothstep(skyline-.03,skyline+.015,p.y);
+            // Coherent wind with gentle phase lag between wheat clusters; lower roots stay quiet.
+            float tips = smoothstep(.68,.81,p.y)*(1.0-smoothstep(.90,.97,p.y));
+            float wind = (sin(p.x*12.0-p.y*5.0-angle)+.25*sin(p.x*21.0+p.y*9.0-angle*2.0+.5))/1.25;
+            offset = float2(mix(.00055*tips*wind,cloudX,sky), mix(.00018*tips*wind,cloudY,sky));
+            // END motion: cypresses
         }
-        float2 samplePoint = clamp(p+offset*u.strength*m,0.0,1.0);
-        return float4(mix(original.rgb,painting.sample(s,samplePoint).rgb,m)*light,1);
+        // BEGIN sampling: refined-four
+        float2 displacement = offset*u.strength*m;
+        float pathMask = min(maskAt(mask,p+displacement*.5),maskAt(mask,p+displacement));
+        float pathSafety = smoothstep(0.0,.20,pathMask);
+        float2 samplePoint = clamp(p+displacement*pathSafety,0.0,1.0);
+        return float4(painting.sample(s,samplePoint).rgb*light,1);
+        // END sampling: refined-four
     }
     // Two half-cycle-offset advections dissolve only when their reset is invisible.
     // Both the image and its temporal derivative match after one full cycle.
