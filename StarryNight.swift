@@ -922,6 +922,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
             statusLabel.stringValue = L10n.tr("status.appliedNotSelected")
         } else { statusLabel.stringValue = L10n.tr("status.firstRun") }
         statusLabel.toolTip = L10n.tr("status.help")
+        statusLabel.isHidden = !hasPublished || pending
         window.contentView?.needsLayout = true
         window.contentView?.layoutSubtreeIfNeeded()
     }
@@ -934,6 +935,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
             let width = 2560, height = Int((2560*screen.height/screen.width/2).rounded())*2
             exporting = true; desktopButton.isEnabled = false; exportButton.isEnabled = false; setArtworkSelectionEnabled(false)
             statusLabel.stringValue = L10n.tr("status.preparing")
+            statusLabel.isHidden = false
             DispatchQueue.global(qos:.userInitiated).async { [self] in
                 do {
                     try engine.export(to:destination,width:width,height:height,speed:speed,strength:strength) { percent in
@@ -974,6 +976,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         panel.beginSheetModal(for:window) { [self] response in
             guard response == .OK, let url = panel.url else { return }
             exporting = true; exportButton.isEnabled = false; desktopButton.isEnabled = false; setArtworkSelectionEnabled(false)
+            statusLabel.isHidden = false
             let speed = animation.speed, strength = animation.strength
             let screen = NSScreen.main?.frame.size ?? NSSize(width:16,height:10)
             let width = 3840, height = Int((3840*screen.height/screen.width/2).rounded())*2
