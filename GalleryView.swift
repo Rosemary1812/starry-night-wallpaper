@@ -427,6 +427,8 @@ final class ArtworkThumbnailRail: NSView {
         buttons = Artwork.allCases.map { artwork in
             let button = NSButton(image: carousel.thumbnail(for: artwork) ?? NSImage(), target: target, action: action)
             button.tag = artwork.rawValue
+            button.keyEquivalent = artwork.shortcutKey
+            button.keyEquivalentModifierMask = artwork.shortcutUsesOption ? [.option, .command] : [.command]
             button.isBordered = false
             button.imageScaling = .scaleProportionallyUpOrDown
             button.setButtonType(.momentaryChange)

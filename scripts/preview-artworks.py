@@ -34,7 +34,14 @@ def native_catalog():
     def strings(name):
         body = block_after(text, 'var ' + name + ': String {')
         return re.findall(r'"([^"\n]*)"', body)
-    names, titles, years, descriptions = [strings(n) for n in ['filename', 'title', 'year', 'description']]
+    names, years = [strings(n) for n in ['filename', 'year']]
+    if 'L10n.tr' in text:
+        resources = dict(re.findall(r'^"([^"]+)"\s*=\s*"([^"]*)";',
+            (ROOT / 'zh-Hans.lproj/Localizable.strings').read_text(), re.M))
+        titles = [resources['artwork.' + name + '.name'] for name in names]
+        descriptions = [resources['artwork.' + name + '.description'] for name in names]
+    else:
+        titles, descriptions = [strings(n) for n in ['title', 'description']]
     assert len(cases) == len(names) == len(titles) == len(years) == len(descriptions)
     bounds = {case: [float(v) for v in values] for case,*values in re.findall(
         r'case \.(\w+): return CGRect\(x:\s*('+FLOAT+r'), y:\s*('+FLOAT+r'), width:\s*('+FLOAT+r'), height:\s*('+FLOAT+r')\)', text)}
