@@ -1115,7 +1115,8 @@ if args.count>1 && args[1] != "--ui-check" {
     } catch { fputs("\(error.localizedDescription)\n",stderr); exit(1) }
 } else {
     let app = NSApplication.shared
-    app.setActivationPolicy(.accessory)
+    app.setActivationPolicy(.regular)
+    app.applicationIconImage = NSImage(contentsOf: Bundle.main.resourceURL!.appendingPathComponent("AppIcon.icns"))
     let delegate = AppDelegate()
     if args.count == 3, args[1] == "--ui-check" {
         delegate.verificationOutput = URL(fileURLWithPath: args[2], isDirectory: true)

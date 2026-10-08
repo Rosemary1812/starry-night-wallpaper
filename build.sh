@@ -11,6 +11,8 @@ fi
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$PWD/.module-cache"
 cp Info.plist "$app/Contents/Info.plist"
 cp Sky.metal "$app/Contents/Resources/Sky.metal"
+zsh scripts/build-icon.sh
+cp dist/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 mkdir -p "$app/Contents/Resources/Fonts"
 cp Fonts/SourceSerif4Variable-Roman.otf Fonts/SourceSerif4-LICENSE.md "$app/Contents/Resources/Fonts/"
 for lproj in en.lproj zh-Hans.lproj zh-Hant.lproj; do
