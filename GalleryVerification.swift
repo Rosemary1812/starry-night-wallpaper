@@ -5,13 +5,24 @@ extension AppDelegate {
         guard let output = verificationOutput else { return }
         do { try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true) }
         catch { fputs("\(error)\n", stderr); exit(1) }
-        let scenes: [(String, Artwork, NSSize, NSAppearance.Name)] = [
+        var scenes: [(String, Artwork, NSSize, NSAppearance.Name)] = [
             ("light-wide", .cypresses, NSSize(width: 1120, height: 790), .aqua),
             ("light-narrow", .wheatStacks, NSSize(width: 940, height: 728), .aqua),
             ("dark-wide", .rhone, NSSize(width: 1120, height: 790), .darkAqua),
             ("dark-narrow", .waterLilies, NSSize(width: 940, height: 728), .darkAqua),
-            ("starry-night", .starryNight, NSSize(width: 1120, height: 790), .aqua)
+            ("starry-night", .starryNight, NSSize(width: 1120, height: 790), .aqua),
+            ("sunrise-light", .impressionSunrise, NSSize(width: 1120, height: 790), .aqua),
+            ("sunrise-dark-narrow", .impressionSunrise, NSSize(width: 940, height: 728), .darkAqua)
         ]
+        for artwork in Artwork.allCases where artwork.rawValue >= 6 {
+            scenes.append(("\(artwork.filename)-light", artwork, NSSize(width: 1120, height: 790), .aqua))
+            scenes.append(("\(artwork.filename)-dark-narrow", artwork, NSSize(width: 940, height: 728), .darkAqua))
+        }
+        guard artworkCards.count == Artwork.allCases.count,
+              Set(Artwork.allCases.map { $0.shortcutLabel }).count == Artwork.allCases.count,
+              artworkCards.allSatisfy({ $0.keyEquivalent.count == 1 }) else {
+            fputs("Incomplete gallery or invalid artwork shortcuts\n", stderr); exit(1)
+        }
         var index = 0
         var reports: [[String: Any]] = []
         func prepare() {
@@ -31,6 +42,11 @@ extension AppDelegate {
                       artworkCards.filter({ $0.state == .on }).count == 1,
                       artworkTitle.stringValue == scene.1.name else {
                     throw failure("Artwork selection did not update the gallery")
+                }
+                let selectedCard = artworkCards[scene.1.rawValue]
+                guard !selectedCard.visibleRect.isEmpty,
+                      selectedCard.visibleRect.width >= selectedCard.bounds.width - 1 else {
+                    throw failure("Selected artwork card is not fully visible")
                 }
                 let content = window.contentView!
                 let views: [(String, NSView)] = [("preview", preview), ("title", artworkTitle),
