@@ -85,3 +85,11 @@ The script also runs `scripts/verify-artworks.sh` to check loop endpoints, prote
 ## License and attribution
 
 This repository is licensed under the MIT License. The files in `WallpaperExtension/` derive from [Phosphene](https://github.com/kageroumado/phosphene) at commit `8b5bd57c1450eda74cf2ec6ceaae2e586cfdfcd6` and retain its MIT license. Read [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the local changes and limitations.
+
+## Authoring another painting
+
+For agent-assisted painting additions and motion refinements, start with the
+[painting wallpaper authoring skill](.agents/skills/author-painting-wallpaper/SKILL.md).
+It covers image rights, painting-specific motion, silhouette protection, app
+integration, and separate cloud/native verification. [AGENTS.md](AGENTS.md) provides
+a discoverable entrypoint; agents without skill discovery can read it directly.
