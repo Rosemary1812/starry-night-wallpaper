@@ -12,7 +12,7 @@ func seedStarryNight() {
     do {
         try fm.createDirectory(at:dir,withIntermediateDirectories:true)
         try fm.copyItem(at:bundled,to:video)
-        let entry = VideoEntry(id:id,name:"流动星夜",filename:video.lastPathComponent,
+        let entry = VideoEntry(id:id,name:"StarryNight",filename:video.lastPathComponent,
             duration:24,fps:30,resolution:CGSize(width:2560,height:1600),dateAdded:Date())
         try JSONEncoder().encode(entry).write(to:dir.appendingPathComponent("metadata.json"),options:.atomic)
         let prefs: [String:Bool] = ["userPaused":false,"alwaysPauseDesktop":false,

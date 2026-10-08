@@ -13,20 +13,14 @@ enum Artwork: Int, CaseIterable {
     var filename: String {
         ["starrynight", "water-lilies", "wheat-stacks", "rhone", "cypresses"][rawValue]
     }
-    var title: String {
-        ["梵高 · 星空", "莫奈 · 睡莲", "莫奈 · 麦草堆：日落与雪景", "梵高 · 罗讷河上的星夜", "梵高 · 有柏树的麦田"][rawValue]
-    }
-    var shortName: String {
-        ["星空", "睡莲", "麦草堆", "罗讷河上的星夜", "有柏树的麦田"][rawValue]
-    }
-    var artist: String { self == .waterLilies || self == .wheatStacks ? "克劳德·莫奈" : "文森特·梵高" }
+    var title: String { name }
+    var shortName: String { name }
+    var artist: String { L10n.tr("artwork.\(filename).artist") }
     var year: String { ["1889", "1906", "1890–1891", "1888", "1889"][rawValue] }
-    var name: String { title.components(separatedBy: " · ").last! }
-    var description: String {
-        ["天空沿笔触旋转 · 柏树、山丘和村庄保持静止",
-         "水面与倒影轻轻荡漾 · 主要睡莲花簇保持静止",
-         "夕照与空气缓慢变化 · 草堆和雪地保持静止",
-         "河面与灯光倒影轻轻摇曳 · 岸线和人物保持静止",
-         "云层与麦浪缓缓流动 · 主要柏树与中间山丘保持静止"][rawValue]
-    }
+    var shortcutKey: String { String(rawValue + 1) }
+    var shortcutUsesOption: Bool { false }
+    var shortcutLabel: String { "⌘\(shortcutKey)" }
+    var name: String { L10n.tr("artwork.\(filename).name") }
+    var metadata: String { "\(artist) · \(year)" }
+    var description: String { L10n.tr("artwork.\(filename).description") }
 }
