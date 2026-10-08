@@ -1,4 +1,4 @@
-# Starry Night Wallpaper
+# StarryNight
 
 [简体中文](README.zh-CN.md)
 
@@ -51,15 +51,23 @@ Each has a dedicated subject mask and distinct motion field. The six additions u
 
 ## Gallery control panel
 
-The gallery uses a black, white, and gray interface. Paintings retain their original colors. Select a painting from the thumbnail strip. The right panel shows the title, artist, year, flow speed, and motion amplitude.
+The native AppKit gallery centers and scales the selected painting, with adjacent
+paintings visible beside it. Only the selected painting uses the Metal preview;
+neighboring cards and the thumbnail strip use cached still images. Drag, use the
+arrow keys, or select a thumbnail. The caption updates after selection settles.
 
-The black **应用到桌面与锁屏** button applies the current preview. Export and system settings are secondary actions. The interface follows the Mac's light or dark appearance.
+A wide window places the artwork title and artist/year beside the painting. In a
+narrow window they move below it. The action row contains **Adjust…**, an ellipsis
+menu, and **Set Wallpaper**. Speed, intensity, preview pause, the diagnostic mask,
+and language are in Adjustments. Export, artwork details, sources, licenses, and
+Wallpaper Settings are in the ellipsis menu.
 
-![Light gallery interface with painting thumbnails and motion controls](docs/media/settings-panel.png)
+The interface follows the system language by default, with persistent choices
+for Simplified Chinese, Traditional Chinese, and English. It follows light/dark
+appearance and Reduce Motion. The brand remains **StarryNight** in every language.
+See [native gallery implementation and verification](docs/native-gallery.md).
 
-![Dark gallery interface](docs/media/settings-panel-dark.png)
-
-These screenshots show an earlier five-painting native build on a Mac. The current source extends the same gallery to twelve paintings; its updated native UI still requires Mac verification. The v0.2.0 downloadable app still has the earlier control panel.
+The downloadable v0.2.0 app still has the earlier control panel.
 
 ## Download
 
@@ -83,37 +91,40 @@ The repository does not include the full-size source image or video that the bui
 
 ## Use
 
-Open `Starry Night.app` and select a painting from the bottom thumbnail strip. You can also use Command-1 through Command-9, Command-0 for the tenth painting, and Option-Command-1 / Option-Command-2 for the last two. Adjust **流动速度** for speed and **变化幅度** for motion amplitude.
+Open `Starry Night.app` and choose a painting. Command-1 through Command-5 also
+select paintings. In **Adjust…**, change speed and intensity or pause the preview.
+Preview pause affects only this window. It does not pause the system wallpaper.
+The language menu includes **Follow System** and the three explicit languages.
 
-Click **应用到桌面与锁屏** to apply the preview. In **System Settings > Wallpaper**, select **流动星夜**. Set the screen saver to use the same wallpaper for the lock-screen effect. Changing paintings or sliders updates only the preview until you apply again. The control panel is currently in Chinese.
+**Set Wallpaper** prepares and publishes a loop for the selected painting. You
+may need to select **StarryNight** in **System Settings > Wallpaper**. First use
+can require opening Wallpaper Settings so macOS initializes the extension. The
+status distinguishes preview-only, unapplied changes, prepared output, and a
+provider selected in System Settings. It does not confirm lock-screen playback.
+Changing the painting or sliders updates only the preview until you apply again.
 
-Wide screens crop the painting to fill the screen. The preview uses the same screen aspect ratio and fill behavior. **显示活动区域** highlights the animated regions in the preview. **暂停播放** pauses both the preview and the current dynamic wallpaper.
-
-Click **导出视频…** to export an MP4 without changing the system wallpaper.
+Wide screens crop the painting to fill the screen. **Show motion mask** temporarily
+highlights animated preview regions. **Export Video…** saves an MP4 without changing
+the system wallpaper.
 
 ## Verify the source build
 
-After building the app, run `zsh scripts/verify-gallery.sh` to rebuild the control panel and check painting selection, slider values, and selection recovery after a busy state. The script captures nineteen scenes across light and dark appearances and wide and narrow windows. Screenshots and layout data are written to `dist/gallery-evidence/`. The UI check does not apply a wallpaper or overwrite saved preview parameters.
+Run `zsh scripts/verify-gallery.sh` on a Mac with the required assets. It rebuilds
+the control panel, runs 75 motion assertions, checks the three languages at wide
+and narrow sizes in both appearances, checks all five paintings, and verifies
+slider updates and busy-state recovery. It also checks reduced motion and the
+production animation timer. Six adjustment panels are checked separately.
+Screenshots and layout data are written to `dist/gallery-evidence/`.
 
-The script also runs `scripts/verify-artworks.sh` to check loop endpoints, protected-subject samples, and motion for all twelve paintings. Rendering screenshots are written to `dist/evidence/`. These checks do not test macOS lock-screen playback.
+The UI check runs offscreen without applying wallpaper or changing saved preview
+parameters. The continuous sequence uses synthetic AppKit events; it is not a
+physical-mouse recording. Its snapshots use the static fallback because
+`cacheDisplay` does not capture Metal presentation layers. Interactive focus,
+trackpad feel, and the live first-frame handoff still need a visible-window check.
 
-### Linux/cloud rendering check
-
-The macOS app requires AppKit and Metal and cannot be built or run on Linux. A small development-only browser preview translates the current `Sky.metal` source and extracts the selected artwork's mask polygons and protected samples from `StarryNight.swift`:
-
-```sh
-python3 scripts/preview-artworks.py --artwork waterloo-bridge  # requires Pillow and matching assets
-python3 -m http.server 8765 --directory dist/artwork-previews/waterloo-bridge
-# Open http://localhost:8765 and click “运行渲染自检”.
-```
-
-It checks exact loop endpoints, still subjects, and visible water motion. WebGL2 tests shader compilation when supported; otherwise a Canvas CPU reference renderer uses arithmetic translated from the same selected shader branch and explicitly reports shader compilation as untested. The preview offers the full painting and the existing aspect-fill desktop crop. Its 8 px mask expansion / 4 px feather uses Pillow and approximates Core Image's kernel. It does not validate the native gallery, Metal compiler, movie export, wallpaper extension, or lock-screen playback; run the Mac checks above for those paths.
-
-### Refined original four
-
-Water Lilies now follows more precise lily contours with slower, mainly horizontal pond ripples. Stacks of Wheat has no geometric deformation and only very faint local sky luminance. The Rhône uses depth-dependent ripples with close boat/rigging protection. Cypresses follows painted cloud curls and small wheat-tip sways, keeping the mountain ridge, olive foliage and cypress still.
-
-These four sample a path-checked displacement without a second original-image dissolve, avoiding soft double edges. Their 24-second cycle and default controls stay compatible. Wheat's verification compares opposite light phases (6s/18s), counts any RGB difference at one quantization step, and requires more than 1,000 changed pixels; its former coarse blue-channel threshold would miss the intended subtle effect. Lossy video compression can introduce noise and obscure that tiny glow, so use lossless reference frames for pixel-level checks and verify the real AVFoundation export on a Mac.
+The script also runs `scripts/verify-artworks.sh` to check loop endpoints,
+protected-subject samples, and motion for all five paintings. Rendering snapshots
+are written to `dist/evidence/`. These checks do not test lock-screen playback.
 
 ## License and attribution
 

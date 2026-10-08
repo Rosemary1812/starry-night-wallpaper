@@ -290,6 +290,7 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             light = 1.0;
             // END motion: parliament-sunset
         }
+        if (u.artwork < 4.5) {
         // BEGIN sampling: refined-four
         float2 displacement = offset*u.strength*m;
         float pathMask = min(maskAt(mask,p+displacement*.5),maskAt(mask,p+displacement));
@@ -297,6 +298,9 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
         float2 samplePoint = clamp(p+displacement*pathSafety,0.0,1.0);
         return float4(painting.sample(s,samplePoint).rgb*light,1);
         // END sampling: refined-four
+        }
+        float2 samplePoint = clamp(p+offset*u.strength*m,0.0,1.0);
+        return float4(mix(original.rgb,painting.sample(s,samplePoint).rgb,m)*light,1);
     }
     // Two half-cycle-offset advections dissolve only when their reset is invisible.
     // Both the image and its temporal derivative match after one full cycle.

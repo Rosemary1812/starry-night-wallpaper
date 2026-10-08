@@ -3,8 +3,8 @@
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>local.starrynight.flow.extension</string>
 <key>CFBundleExecutable</key><string>StarryWallpaper</string>
-<key>CFBundleName</key><string>流动星夜</string>
-<key>CFBundleDisplayName</key><string>流动星夜</string>
+<key>CFBundleName</key><string>StarryNight</string>
+<key>CFBundleDisplayName</key><string>StarryNight</string>
 <key>CFBundlePackageType</key><string>XPC!</string>
 <key>CFBundleShortVersionString</key><string>0.2.0</string>
 <key>CFBundleVersion</key><string>2</string>

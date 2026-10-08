@@ -1,5 +1,15 @@
 # Third-party notices
 
+## Interface font
+
+The application bundles Adobe [Source Serif 4](https://github.com/adobe-fonts/source-serif),
+version 4.005, as an unmodified variable OpenType font. Copyright © 2014–2023
+Adobe, with Reserved Font Name “Source”. It is licensed under the SIL Open Font
+License 1.1; the complete license is bundled at `Fonts/SourceSerif4-LICENSE.md`.
+The brand uses weight 500, and English artwork titles use weight 400. Chinese
+titles use macOS's installed regional Songti fonts, which are not redistributed.
+
+
 ## Artwork images
 
 The additional artwork reproductions are downloaded by `scripts/fetch-artworks.sh`.

@@ -84,7 +84,7 @@ func buildSettingsViewModelsXPC() async -> AnyObject? {
     let group = SettingsGroup(
         id: groupID,
         items: items,
-        localizedName: "流动星夜",
+        localizedName: "StarryNight",
         disposability: .none,
         sortOrder: -100,
         sortID: GroupSortID(id: "com.apple.wallpaper.aerials"),
