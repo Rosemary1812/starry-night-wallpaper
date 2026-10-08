@@ -118,3 +118,10 @@ python3 -m http.server 8765 --directory dist/artwork-previews/waterloo-bridge
 ## 许可证和归属
 
 仓库采用 MIT License。`WallpaperExtension/` 中的文件派生自 [Phosphene](https://github.com/kageroumado/phosphene) 的提交 `8b5bd57c1450eda74cf2ec6ceaae2e586cfdfcd6`，并保留其 MIT 许可证。请阅读 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 了解本项目改动和限制。
+
+## 添加或优化画作
+
+使用 agent 添加画作或优化动效时，请先阅读
+[画作动态壁纸创作 skill](.agents/skills/author-painting-wallpaper/SKILL.md)。
+它包含图片来源与授权、逐画作动效设计、轮廓保护、软件集成以及云端参考与原生验证的区分。
+[AGENTS.md](AGENTS.md) 提供入口；不支持自动发现 skill 的 agent 也可以直接阅读这些文件。
