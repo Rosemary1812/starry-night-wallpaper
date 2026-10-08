@@ -77,9 +77,9 @@ final class ArtworkCard: NSButton {
         setButtonType(.toggle)
         isBordered = false
         focusRingType = .none
-        keyEquivalent = String(artwork.rawValue + 1)
-        keyEquivalentModifierMask = [.command]
-        toolTip = "\(artwork.title) · ⌘\(artwork.rawValue + 1)"
+        keyEquivalent = artwork.shortcutKey
+        keyEquivalentModifierMask = artwork.shortcutUsesOption ? [.option, .command] : [.command]
+        toolTip = "\(artwork.title) · \(artwork.shortcutLabel)"
         setAccessibilityLabel(artwork.title)
         setAccessibilityHelp("选择画作并预览动效")
         translatesAutoresizingMaskIntoConstraints = false

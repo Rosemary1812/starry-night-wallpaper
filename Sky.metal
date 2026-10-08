@@ -75,10 +75,107 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
             light += .025*sin(angle)*m*u.strength;
         } else if (u.artwork < 3.5) {
             offset = float2(.003*sin(p.y*80.0+angle*2.0), .0008*cos(p.x*24.0-angle));
-        } else {
+        } else if (u.artwork < 4.5) {
             float sky = 1.0-smoothstep(.40,.65,p.y);
             offset = mix(float2(.003*sin(p.x*30.0+angle), .001*sin(p.x*30.0+angle)),
                 float2(.004*sin(p.y*18.0+angle), .0015*cos(p.x*15.0-angle)),sky);
+        } else if (u.artwork < 5.5) {
+            // BEGIN motion: impression-sunrise
+            // Impression, Sunrise: small horizontal ripples follow the painted water.
+            // The subject mask holds the sun, harbor, boats and people completely still.
+            float water = smoothstep(.55,.92,p.y);
+            offset = float2(smoothstep(.55,.64,p.y)*(.0012+.0014*water)*sin(p.y*95.0+angle*2.0),
+                .00065*water*cos(p.x*32.0-angle));
+            // Warm reflections breathe locally, without tinting the rest of the canvas.
+            float reflectionX = (p.x-.605)/.065;
+            float reflection = exp(-reflectionX*reflectionX)
+                * smoothstep(.46,.55,p.y) * (1.0-smoothstep(.83,.96,p.y));
+            light += .012*sin(angle)*reflection*m*u.strength;
+            // END motion: impression-sunrise
+        } else if (u.artwork < 6.5) {
+            // BEGIN motion: waterloo-bridge
+            // Only the open Thames moves; masonry, haze, skyline and signature are masked.
+            float depth = smoothstep(.60,.94,p.y);
+            float ripple = sin(p.y*108.0 + angle*2.0 + .35*sin(p.x*7.0));
+            float undertone = sin(p.y*181.0 - angle + p.x*3.0);
+            float horizontal = (.00048 + .00102*depth)*(ripple + .18*undertone);
+            float vertical = .00022*depth*sin(p.x*22.0 + p.y*29.0 - angle);
+            offset = float2(horizontal, vertical);
+            light = 1.0;
+            // END motion: waterloo-bridge
+        } else if (u.artwork < 7.5) {
+            // BEGIN motion: nocturne-bognor
+            // A slow sea-swell remains between the fixed horizon, boats and beach.
+            float depth = smoothstep(.365,.69,p.y);
+            float shoreEase = 1.0 - smoothstep(.73,.855,p.y);
+            float sea = depth*shoreEase;
+            float swell = sin(p.y*79.0 - angle + .28*sin(p.x*6.0));
+            float ripple = sin(p.y*137.0 + angle*2.0 + p.x*4.0);
+            float horizontal = sea*(.00118*swell + .00023*ripple);
+            float silverY = (p.y-.672)/.075;
+            float silverBand = exp(-silverY*silverY);
+            float vertical = sea*(.00010 + .00016*silverBand)*sin(p.x*18.0 + p.y*26.0 - angle);
+            offset = float2(horizontal, vertical);
+            light = 1.0;
+            // END motion: nocturne-bognor
+        } else if (u.artwork < 8.5) {
+            // BEGIN motion: approach-venice
+            // Turner: preserve the entire sky and city; ripple only unobstructed lagoon water.
+            float water = smoothstep(.663,.742,p.y);
+            float nearWater = smoothstep(.72,.97,p.y);
+            float ripples = sin(p.y*143.0 + angle*2.0 + .34*sin(p.x*7.0));
+            float fineRipples = sin(p.y*231.0 - angle*3.0 + p.x*5.0);
+            float horizontal = water*((.00070+.00070*nearWater)*ripples + .00022*nearWater*fineRipples);
+            float vertical = water*.00019*nearWater*cos(p.y*88.0 + p.x*13.0 - angle*2.0);
+            offset = float2(horizontal,vertical);
+            // Let the original pigments create the shimmer. No illumination modulation.
+            light = 1.0;
+            // END motion: approach-venice
+        } else if (u.artwork < 9.5) {
+            // BEGIN motion: cliff-walk
+            // Monet: separate sky, open sea, and two small grass patches; solid subjects stay masked.
+            float sky = 1.0-smoothstep(.265,.350,p.y);
+            float cloudDrift = .00090*sin(angle) + .00022*sin(angle*2.0+p.y*3.0);
+            float skyX = sky*cloudDrift;
+            float skyY = sky*.00013*sin(angle*2.0+.8);
+            float sea = smoothstep(.458,.500,p.y)*(1.0-smoothstep(.715,.780,p.y));
+            sea *= 1.0-smoothstep(.385,.435,p.x);
+            float nearSea = smoothstep(.48,.72,p.y);
+            float seaX = sea*((.00066+.00040*nearSea)*sin(p.y*145.0-angle*2.0) + .00018*sin(p.y*231.0+angle*3.0+p.x*6.0));
+            float seaY = sea*.00019*nearSea*cos(p.y*93.0+p.x*17.0-angle*2.0);
+            float rx = (p.x-.825)/.185;
+            float ry = (p.y-.745)/.225;
+            float rightGrass = exp(-rx*rx-ry*ry)*smoothstep(.52,.63,p.y);
+            float lx = (p.x-.205)/.235;
+            float ly = (p.y-.895)/.120;
+            float lowGrass = exp(-lx*lx-ly*ly)*smoothstep(.760,.835,p.y);
+            float grass = rightGrass + .70*lowGrass;
+            float grassX = .00070*grass*sin(angle+p.x*8.0+p.y*2.0);
+            float grassY = .00016*grass*sin(angle*2.0+p.x*6.0);
+            offset = float2(skyX+seaX+grassX,skyY+seaY+grassY);
+            light = 1.0;
+            // END motion: cliff-walk
+        } else if (u.artwork < 10.5) {
+            // BEGIN motion: bridge-villeneuve
+            float river = smoothstep(.696,.779,p.y);
+            float nearWater = smoothstep(.725,.985,p.y);
+            float channelX = (p.x-.72)/.55;
+            float channel = .50+.50*exp(-channelX*channelX);
+            float ripples = .78*sin(p.y*148.0+angle*2.0+.40*sin(p.x*7.0))+.22*sin(p.y*236.0-angle*3.0+p.x*8.0);
+            offset = float2(river*channel*(.00055+.00110*nearWater)*ripples, river*channel*.00016*nearWater*sin(p.y*182.0+angle*2.0+p.x*9.0));
+            light = 1.0;
+            // END motion: bridge-villeneuve
+        } else if (u.artwork < 11.5) {
+            // BEGIN motion: parliament-sunset
+            float bank = .650+.105*smoothstep(.090,.180,p.x);
+            float river = smoothstep(bank,bank+.075,p.y);
+            float nearWater = smoothstep(.760,.980,p.y);
+            float reflectionX = (p.x-.28)/.42;
+            float reflectionChannel = .72+.28*exp(-reflectionX*reflectionX);
+            float ripples = .80*sin(p.y*138.0+angle*2.0+.38*sin(p.x*9.0))+.20*sin(p.y*237.0-angle*3.0+p.x*12.0);
+            offset = float2(river*reflectionChannel*(.00045+.00135*nearWater)*ripples, river*reflectionChannel*.00019*nearWater*sin(p.y*154.0-angle*2.0+p.x*8.0));
+            light = 1.0;
+            // END motion: parliament-sunset
         }
         float2 samplePoint = clamp(p+offset*u.strength*m,0.0,1.0);
         return float4(mix(original.rgb,painting.sample(s,samplePoint).rgb,m)*light,1);

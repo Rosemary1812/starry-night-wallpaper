@@ -10,6 +10,19 @@ They are bundled in local builds and downloadable application packages, but are 
 - Vincent van Gogh, *Starry Night Over the Rhône*, 1888, Musée d'Orsay. Public domain reproduction via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Starry_Night_Over_the_Rhone.jpg).
 - Vincent van Gogh, *Wheat Field with Cypresses*, 1889, The Metropolitan Museum of Art, 1993.132. [Public domain museum image](https://www.metmuseum.org/art/collection/search/436535).
 
+- Claude Monet, *Impression, Sunrise (Impression, soleil levant)*, 1872, Musée Marmottan Monet. Faithful public-domain reproduction, marked PDM 1.0 on [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Monet_-_Impression,_Sunrise.jpg). The download uses the 5773 × 4478 `Monet - Impression, Sunrise.jpg` image; its full composition is preserved before the existing aspect-fill screen crop.
+
+## Additional collection images
+
+- Claude Monet, *Waterloo Bridge, Sunlight Effect*, 1903, Art Institute of Chicago, 1933.1163. Credit: Claude Monet / Art Institute of Chicago, via [Wikimedia Commons, uploader Maltaper](https://commons.wikimedia.org/wiki/File:Monet_-_Waterloo_Bridge,_Sunlight_Effect,_1903.jpg). The specific reproduction is [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), not covered by the repository's MIT license. Resized/cropped previews and animated derivatives of this image are also provided under CC BY-SA 4.0, with changes consisting of resizing, aspect-fill cropping where selected, masked motion, and the optional diagnostic overlay. Retain this attribution and license when redistributing that image or its derivatives. The source image itself is stored unchanged.
+- James McNeill Whistler, *Nocturne: Blue and Silver—Bognor*, 1871–1876, Freer Gallery of Art, Smithsonian, Gift of Charles Lang Freer, F1906.103a-b. [Official CC0/open-access record](https://www.si.edu/object/nocturne-blue-and-silver-bognor%3Afsg_F1906.103a-b); public-domain reproduction via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Whistler_-_Nocturne_Blue_and_Silver--Bognor_(1871-1876).jpg).
+- J. M. W. Turner, *Approach to Venice*, 1844, National Gallery of Art, Andrew W. Mellon Collection, 1937.1.110. [Public-domain museum image](https://www.nga.gov/artworks/117-approach-venice).
+- Claude Monet, *Cliff Walk at Pourville*, 1882, Art Institute of Chicago, 1933.443. Public-domain reproduction via [Google Art Project / Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Claude_Monet_-_Cliff_Walk_at_Pourville_-_Google_Art_Project.jpg); [museum catalogue](https://publications.artic.edu/node/135468).
+- Alfred Sisley, *The Bridge at Villeneuve-la-Garenne*, 1872, The Metropolitan Museum of Art, Gift of Mr. and Mrs. Henry Ittleson Jr., 1964, 64.287. [Public-domain museum image](https://www.metmuseum.org/art/collection/search/437680). The unchanged download includes a black surround and irregular canvas edges. `imageBounds` crops the image to pixels (57,36)–(1166,868) in the 1200 × 900 reproduction; this removes the surround and a narrow uneven peripheral strip without removing the signature or main subjects.
+- Claude Monet, *The Houses of Parliament, Sunset*, 1903, National Gallery of Art, Chester Dale Collection, 1963.10.48. [Public-domain museum image](https://www.nga.gov/artworks/46523-houses-parliament-sunset).
+
+This notice is bundled into the application's Resources directory. Code remains MIT; the Waterloo image and its visual derivatives retain their separate CC BY-SA 4.0 terms.
+
 ## Wallpaper extension
 
 The Swift files and bridging header in `WallpaperExtension/` are derived from
