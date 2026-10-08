@@ -35,10 +35,19 @@ extension AppDelegate {
         for scene in scenes.prefix(6) {
             scenes.append((scene.0.replacingOccurrences(of: "-light", with: "-dark"), scene.1, scene.2, scene.3, .darkAqua))
         }
-        let represented = Set(scenes.map { $0.2.rawValue })
-        for artwork in Artwork.allCases where !represented.contains(artwork.rawValue) {
-            scenes.append(("\(artwork.filename)-light", .zhHans, artwork, NSSize(width: 1080, height: 760), .aqua))
-            scenes.append(("\(artwork.filename)-dark-narrow", .en, artwork, NSSize(width: 820, height: 650), .darkAqua))
+        for artwork in Artwork.allCases {
+            for language in [AppLanguage.zhHans, .zhHant, .en] {
+                guard !scenes.contains(where: { $0.1 == language && $0.2 == artwork }) else { continue }
+                let isNarrow = language != .zhHans
+                let size = isNarrow ? NSSize(width: 760, height: 620) : NSSize(width: 1200, height: 760)
+                scenes.append(("catalog-\(artwork.filename)-\(language.rawValue)", language, artwork,
+                    size, isNarrow ? .darkAqua : .aqua))
+            }
+        }
+        if let expected = ProcessInfo.processInfo.environment["STARRY_VERIFY_EXPECTED_ARTWORK_COUNT"],
+           Int(expected) != Artwork.allCases.count {
+            fputs("Expected \(expected) paintings, found \(Artwork.allCases.count); integration dependencies are missing\n", stderr)
+            exit(1)
         }
         let adjustmentOnly = ProcessInfo.processInfo.environment["STARRY_VERIFY_ADJUSTMENTS_ONLY"] == "1"
         if adjustmentOnly { scenes = [scenes[2]] }
@@ -86,6 +95,15 @@ extension AppDelegate {
                 var glyphs = [CGGlyph](repeating: 0, count: characters.count)
                 guard CTFontGetGlyphsForCharacters(titleFont as CTFont, characters, &glyphs, characters.count) else {
                     throw failure("Title font is missing glyphs: \(artworkTitle.stringValue)")
+                }
+                for text in [scene.2.artist, scene.2.description] {
+                    let attributed = NSAttributedString(string: text, attributes: [.font: NSFont.systemFont(ofSize: 13)])
+                    let line = CTLineCreateWithAttributedString(attributed)
+                    for run in CTLineGetGlyphRuns(line) as! [CTRun] {
+                        var glyphs = [CGGlyph](repeating: 0, count: CTRunGetGlyphCount(run))
+                        CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
+                        guard !glyphs.contains(0) else { throw failure("Missing artist/description glyph: \(text)") }
+                    }
                 }
                 let content = window.contentView!
                 let views: [(String, NSView)] = [("carousel", carousel), ("preview", preview), ("title", artworkTitle),
@@ -174,7 +192,7 @@ extension AppDelegate {
                     let data = try JSONSerialization.data(withJSONObject: reports, options: [.prettyPrinted, .sortedKeys])
                     try data.write(to: output.appendingPathComponent("layout.json"))
                     AppLanguage.current = savedLanguage
-                    print("PASS: gallery selection, live slider values, busy recovery; \(scenes.count) captured scenes")
+                    print("PASS: gallery selection, live slider values, busy recovery; \(Artwork.allCases.count) paintings, \(scenes.count) captured scenes")
                     timer.invalidate()
                     if adjustmentOnly { NSApp.terminate(nil); return }
                     try verifyCarouselFrames(output: output, savedLanguage: savedLanguage)
