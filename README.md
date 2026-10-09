@@ -64,7 +64,7 @@ StarryNight requires **macOS 26 and an Apple Silicon Mac**.
 2. Extract it and move `Starry Night.app` into Applications.
 3. Open the app. If macOS blocks it, Control-click it in Finder and choose **Open**.
 
-Release archives include a SHA-256 checksum file. The latest published release, [v0.2.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.2.0), has the earlier five-painting control panel. The twelve-painting gallery and the media on this page describe the integrated source branch, `codex/preview-all-prs`.
+Release archives include a SHA-256 checksum file. The latest published release, [v0.2.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.2.0), has the earlier five-painting control panel. The twelve-painting gallery and the media on this page describe the current `main` branch.
 
 This is an experimental extension that uses private macOS APIs. Builds use an ad hoc signature, are not notarized, and are not intended for the Mac App Store. macOS updates may affect extension compatibility.
 
@@ -102,7 +102,7 @@ Open the **…** menu and choose **Export Video…**. Export saves a looping H.2
 You need macOS 26, Apple Silicon, Xcode Command Line Tools, and the artwork assets. The app and extension use Swift, AppKit, Metal, and AVFoundation. Building the app does not require Python or FFmpeg.
 
 ```sh
-git clone --branch codex/preview-all-prs https://github.com/Rosemary1812/starry-night-wallpaper.git
+git clone --branch main https://github.com/Rosemary1812/starry-night-wallpaper.git
 cd starry-night-wallpaper
 xcode-select --install
 mkdir -p assets
