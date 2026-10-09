@@ -29,7 +29,7 @@ enum WallpaperBridge {
     }
     static func prepareRender() throws -> URL {
         guard FileManager.default.fileExists(atPath:documents.path) else {
-            throw failure("请先打开系统壁纸设置，让 macOS 完成星夜扩展的首次加载。")
+            throw failure(L10n.tr("error.extensionFirstRun"))
         }
         try FileManager.default.createDirectory(at:renders,withIntermediateDirectories:true)
         return renders.appendingPathComponent("render-\(UUID().uuidString).mp4")

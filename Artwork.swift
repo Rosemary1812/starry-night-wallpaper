@@ -2,31 +2,34 @@ import Foundation
 import CoreGraphics
 
 enum Artwork: Int, CaseIterable {
-    case starryNight, waterLilies, wheatStacks, rhone, cypresses
+    // Append new cases to preserve persisted artwork IDs and existing shortcuts.
+    case starryNight, waterLilies, wheatStacks, rhone, cypresses, impressionSunrise
+    case waterlooBridge, nocturneBognor, approachVenice, cliffWalk, bridgeVilleneuve, parliamentSunset
 
     // The Met reproduction includes the unpainted canvas edge and a black surround.
     var imageBounds: CGRect {
-        self == .cypresses ? CGRect(x: 0.033, y: 0.04, width: 0.934, height: 0.92)
-            : CGRect(x: 0, y: 0, width: 1, height: 1)
+        switch self {
+        case .cypresses: return CGRect(x: 0.033, y: 0.04, width: 0.934, height: 0.92)
+        case .bridgeVilleneuve: return CGRect(x: 0.0475, y: 0.04, width: 0.9241666667, height: 0.9244444444)
+        default: return CGRect(x: 0, y: 0, width: 1, height: 1)
+        }
     }
 
     var filename: String {
-        ["starrynight", "water-lilies", "wheat-stacks", "rhone", "cypresses"][rawValue]
+        ["starrynight", "water-lilies", "wheat-stacks", "rhone", "cypresses", "impression-sunrise",
+         "waterloo-bridge", "nocturne-bognor", "approach-venice", "cliff-walk", "bridge-villeneuve", "parliament-sunset"][rawValue]
     }
-    var title: String {
-        ["梵高 · 星空", "莫奈 · 睡莲", "莫奈 · 麦草堆：日落与雪景", "梵高 · 罗讷河上的星夜", "梵高 · 有柏树的麦田"][rawValue]
+    var title: String { name }
+    var shortName: String { name }
+    var artist: String { L10n.tr("artwork.\(filename).artist") }
+    var year: String {
+        ["1889", "1906", "1890–1891", "1888", "1889", "1872", "1903", "1871–1876",
+         "1844", "1882", "1872", "1903"][rawValue]
     }
-    var shortName: String {
-        ["星空", "睡莲", "麦草堆", "罗讷河上的星夜", "有柏树的麦田"][rawValue]
-    }
-    var artist: String { self == .waterLilies || self == .wheatStacks ? "克劳德·莫奈" : "文森特·梵高" }
-    var year: String { ["1889", "1906", "1890–1891", "1888", "1889"][rawValue] }
-    var name: String { title.components(separatedBy: " · ").last! }
-    var description: String {
-        ["天空沿笔触旋转 · 柏树、山丘和村庄保持静止",
-         "水面与倒影轻轻荡漾 · 主要睡莲花簇保持静止",
-         "夕照与空气缓慢变化 · 草堆和雪地保持静止",
-         "河面与灯光倒影轻轻摇曳 · 岸线和人物保持静止",
-         "云层与麦浪缓缓流动 · 主要柏树与中间山丘保持静止"][rawValue]
-    }
+    var shortcutKey: String { rawValue < 9 ? String(rawValue + 1) : rawValue == 9 ? "0" : String(rawValue - 9) }
+    var shortcutUsesOption: Bool { rawValue >= 10 }
+    var shortcutLabel: String { "\(shortcutUsesOption ? "⌥" : "")⌘\(shortcutKey)" }
+    var name: String { L10n.tr("artwork.\(filename).name") }
+    var metadata: String { "\(artist) · \(year)" }
+    var description: String { L10n.tr("artwork.\(filename).description") }
 }

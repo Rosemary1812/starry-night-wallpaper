@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>日出·印象 · 云端渲染验证</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eeedea;color:#222;font:14px system-ui,sans-serif}main{max-width:1440px;margin:auto;padding:28px 32px}header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}h1{font-size:25px;margin:0 0 7px;font-weight:550}p{margin:0;color:#6b6b65;font-size:13px}.tag{border:1px solid #cccac2;border-radius:20px;padding:8px 13px;font-size:12px}section{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:28px;align-items:start}.stage{background:#242729;padding:20px;border-radius:8px;display:flex;align-items:center;justify-content:center;min-height:380px}canvas{display:block;width:100%;height:auto;max-height:72vh;object-fit:contain}h2{font-size:22px;margin:8px 0 8px;font-weight:500}aside p{line-height:1.8}label{display:block;margin-top:25px;font-size:13px}.row{display:flex;justify-content:space-between;margin-bottom:10px}input[type=range]{width:100%;accent-color:#242729}select,button{background:#f8f7f4;color:#222;border:1px solid #c9c8c1;border-radius:6px;padding:9px 13px;font:13px system-ui;cursor:pointer}select{width:100%}button{margin-top:18px;width:100%}button.primary{background:#262927;color:white;border-color:#262927}label.check{display:flex;gap:7px;align-items:center;margin-top:18px}input[type=checkbox]{accent-color:#242729}.note{border-top:1px solid #d1d0c9;margin-top:24px;padding-top:18px;font-size:12px;line-height:1.7;color:#76766f}#report{margin:18px 0 0;white-space:pre-wrap;font:12px/1.7 ui-monospace,monospace;color:#61695f}footer{margin-top:17px;color:#76766f;font-size:12px;display:flex;gap:18px;justify-content:space-between}a{color:inherit}.error{color:#a33!important}@media(max-width:850px){section{grid-template-columns:1fr}aside{display:grid;grid-template-columns:1fr 1fr;gap:15px}aside>div{min-width:0}.stage{min-height:0}main{padding:20px}.tag{display:none}}
+</style>
+<main><header><div><h1>流动星夜</h1><p>画作集 / 莫奈 · 日出·印象</p></div><span class="tag">WebGL 云端渲染验证</span></header>
+<section><div><div class="stage"><canvas id="painting" width="1280" height="993" aria-label="日出·印象实时动态画作"></canvas></div><footer><span id="frame">正在载入画作…</span><span>24 秒无缝循环</span></footer><pre id="report" aria-live="polite"></pre></div>
+<aside><div><h2>日出·印象</h2><p>克劳德·莫奈 · 1872</p><p style="margin-top:16px">水面与橙色倒影轻轻荡漾<br>太阳、船只与港口保持静止</p>
+<label><span class="row">画面比例</span><select id="ratio"><option value="original">原画完整构图</option><option value="wide">16:10 桌面裁切</option><option value="ultrawide">16:9 桌面裁切</option></select></label>
+<label><span class="row">流动速度 <output id="speedValue">1.00×</output></span><input id="speed" aria-label="流动速度" type="range" min="0.25" max="2" step="0.05" value="1"></label>
+<label><span class="row">变化幅度 <output id="strengthValue">140%</output></span><input id="strength" aria-label="变化幅度" type="range" min="0" max="2.5" step="0.05" value="1.4"></label>
+<button id="pause">暂停播放</button><label class="check"><input id="showMask" type="checkbox">显示活动区域</label></div>
+<div><button id="verify" class="primary">运行渲染自检</button><p class="note">直接转译仓库 Metal 动效公式与遮罩轮廓。此页用于 Linux 云端验证；Mac 原生界面、导出与锁屏仍需在 macOS 验证。</p></div></aside></section>
+<footer><span>公有领域原画 · Musée Marmottan Monet</span><a href="https://commons.wikimedia.org/wiki/File:Monet_-_Impression,_Sunrise.jpg">图像来源与授权</a></footer></main>
+<script src="source-data.js"></script>
+<script src="sunrise-cpu.js"></script>
+<script>
+(async()=>{
+const $=id=>document.getElementById(id),canvas=$('painting');
+if(SOURCE.meta){const info=SOURCE.meta;document.title=info.name+' · 云端渲染验证';document.querySelector('header p').textContent='画作集 / '+info.title;document.querySelector('aside h2').textContent=info.name;const paras=document.querySelectorAll('aside>div:first-child>p');paras[0].textContent=info.artist+' · '+info.year;paras[1].textContent=info.description;canvas.setAttribute('aria-label',info.name+'实时动态画作');document.querySelector('footer:last-child>span').textContent=info.id===6?'Claude Monet / Art Institute of Chicago · Wikimedia Commons (Maltaper) · CC BY-SA 4.0 · 已缩放与动画处理':'原画来源与图像授权见 THIRD-PARTY-NOTICES.md';const noticeLink=document.querySelector('footer:last-child a');noticeLink.href='THIRD-PARTY-NOTICES.md';noticeLink.textContent='来源与完整授权';if(info.id===6){const sourceLink=document.createElement('a');sourceLink.href='https://commons.wikimedia.org/wiki/File:Monet_-_Waterloo_Bridge,_Sunlight_Effect,_1903.jpg';sourceLink.textContent='Waterloo 图源';const licenseLink=document.createElement('a');licenseLink.href='https://creativecommons.org/licenses/by-sa/4.0/';licenseLink.textContent='CC BY-SA 4.0';noticeLink.before(sourceLink,licenseLink);}}
+
+try {
+const gl=canvas.getContext('webgl2',{preserveDrawingBuffer:true,alpha:false,antialias:false});
+if(!gl){await runCPUPreview(SOURCE);return;}
+function compile(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(s));return s}
+const program=gl.createProgram();
+gl.attachShader(program,compile(gl.VERTEX_SHADER,`#version 300 es
+out vec2 vUV;
+void main(){vec2 p=vec2((gl_VertexID==1)?3.0:-1.0,(gl_VertexID==2)?3.0:-1.0);gl_Position=vec4(p,0,1);vUV=vec2((p.x+1.0)*.5,(1.0-p.y)*.5);}`));
+gl.attachShader(program,compile(gl.FRAGMENT_SHADER,SOURCE.fragment));gl.linkProgram(program);
+if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);
+async function texture(path,unit,name){const im=new Image();im.src=path;await im.decode();gl.activeTexture(gl.TEXTURE0+unit);const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);gl.uniform1i(gl.getUniformLocation(program,name),unit);return im}
+const im=await texture('painting.jpg',0,'painting');await texture('mask.png',1,'mask');const imageAspect=im.width/im.height;
+const uniform=(name,v)=>gl.uniform1f(gl.getUniformLocation(program,'u.'+name),v);
+let phase=8,paused=false,last=performance.now();
+function resize(){canvas.width=1280;canvas.height=$('ratio').value==='wide'?800:$('ratio').value==='ultrawide'?720:Math.round(1280/imageAspect)}resize();
+function render(time=phase,strength=+$('strength').value,mask=$('showMask').checked){gl.viewport(0,0,canvas.width,canvas.height);uniform('time',time);uniform('strength',strength);uniform('aspect',canvas.width/canvas.height);uniform('showMask',mask?1:0);uniform('artwork',SOURCE.meta?.id ?? 5);uniform('imageAspect',imageAspect);gl.drawArrays(gl.TRIANGLES,0,3)}
+function pixels(t,s){render(t,s,false);const b=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,b);return b}
+function verify(){const lines=[];try{const zero=pixels(0,0),first=pixels(0,1.4),middle=pixels(8,1.4),loop=pixels(24,1.4);let mismatch=0,changed=0;for(let i=0;i<first.length;i+=4){if(first[i]!==loop[i]||first[i+1]!==loop[i+1]||first[i+2]!==loop[i+2])mismatch++;if(Math.max(...[0,1,2].map(c=>Math.abs(first[i+c]-middle[i+c])))>2)changed++}if(mismatch)throw Error(`loop: ${mismatch} differing pixels`);lines.push('PASS · 0s / 24s 循环端点完全一致');
+let checked=0;for(const [sx,sy]of SOURCE.anchors){const aspect=canvas.width/canvas.height;const x=aspect>imageAspect?sx:(sx-.5)*imageAspect/aspect+.5;const y=aspect>imageAspect?(sy-.5)*aspect/imageAspect+.5:sy;if(x<0||x>=1||y<0||y>=1)continue;const i=((canvas.height-1-Math.floor(y*canvas.height))*canvas.width+Math.floor(x*canvas.width))*4;for(let c=0;c<3;c++)if(first[i+c]!==zero[i+c]||first[i+c]!==middle[i+c])throw Error(`protected anchor moved: ${sx}, ${sy}`);checked++}lines.push(`PASS · ${checked} 处主体采样保持静止`);if(changed<=200)throw Error('insufficient local motion');lines.push(`PASS · ${changed.toLocaleString()} 像素检测到局部动效`);const e=gl.getError();if(e!==gl.NO_ERROR)throw Error(`WebGL error ${e}`);lines.push('PASS · WebGL2 shader 编译与绘制无错误');$('report').className='';}catch(e){lines.push('FAIL · '+e.message);$('report').className='error'}$('report').textContent=lines.join('\n');render();}
+$('verify').onclick=verify;$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'继续播放':'暂停播放'};$('ratio').onchange=()=>{resize();render();$('report').textContent=''};
+$('speed').oninput=()=>{$('speedValue').value=(+$('speed').value).toFixed(2)+'×'};$('strength').oninput=()=>{$('strengthValue').value=Math.round(+$('strength').value*100)+'%';render()};$('showMask').onchange=()=>render();
+function tick(now){if(!paused)phase=(phase+Math.min((now-last)/1000,.1)*+$('speed').value)%24;last=now;render();$('frame').textContent=(paused?'已暂停':'实时渲染')+' · '+phase.toFixed(2)+' s';requestAnimationFrame(tick)}
+render();requestAnimationFrame(tick);verify();
+}catch(e){$('report').className='error';$('report').textContent='FAIL · '+e.message;console.error(e)}
+})();
+</script></html>
