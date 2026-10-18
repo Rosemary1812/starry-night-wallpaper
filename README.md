@@ -64,7 +64,7 @@ StarryNight requires **macOS 26 and an Apple Silicon Mac**.
 2. Extract it and move `Starry Night.app` into Applications.
 3. Open the app. If macOS blocks it, Control-click it in Finder and choose **Open**.
 
-Release archives include a SHA-256 checksum file. The latest published release, [v0.2.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.2.0), has the earlier five-painting control panel. The twelve-painting gallery and the media on this page describe the current `main` branch.
+Release archives include a SHA-256 checksum file. [v0.3.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.3.0) includes the twelve-painting gallery shown on this page.
 
 This is an experimental extension that uses private macOS APIs. Builds use an ad hoc signature, are not notarized, and are not intended for the Mac App Store. macOS updates may affect extension compatibility.
 

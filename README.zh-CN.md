@@ -64,7 +64,7 @@
 2. 解压，将 `Starry Night.app` 移入“应用程序”。
 3. 打开应用。如果 macOS 阻止打开，在 Finder 中按住 Control 点击应用，再选择“打开”。
 
-发布包附有 SHA-256 校验文件。目前已发布的 [v0.2.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.2.0) 使用之前的五幅画控制面板。本页的十二幅画画廊与预览媒体对应当前 `main` 分支。
+发布包附有 SHA-256 校验文件。[v0.3.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.3.0) 包含本页展示的十二幅画画廊。
 
 这是使用 macOS 私有 API 的实验性扩展。构建使用 ad hoc 签名，未经过公证，也不面向 Mac App Store。后续 macOS 更新可能影响扩展兼容性。
 
