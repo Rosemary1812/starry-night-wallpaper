@@ -109,3 +109,12 @@
 "artwork.parliament-sunset.name" = "國會大廈，日落";
 "artwork.parliament-sunset.artist" = "克勞德·莫內";
 "artwork.parliament-sunset.description" = "暮色河面和暖色倒影細微流動；國會大廈輪廓保持靜止。";
+"artwork.the-scream.name" = "吶喊";
+"artwork.the-scream.artist" = "愛德華·孟克";
+"artwork.the-scream.description" = "天空色帶緩慢流動；人物、橋樑與峽灣靜止。";
+"artwork.circular-forms.name" = "圓形構圖";
+"artwork.circular-forms.artist" = "羅伯特·德洛內";
+"artwork.circular-forms.description" = "三組色環以不同節奏輕輕迴旋，畫面外圍保持靜止。";
+"artwork.concentric-circles.name" = "色彩習作：同心圓方格";
+"artwork.concentric-circles.artist" = "瓦西里·康丁斯基";
+"artwork.concentric-circles.description" = "十二組圓環錯相緩緩迴旋；方格邊界靜止。";

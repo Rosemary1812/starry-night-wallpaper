@@ -8,10 +8,12 @@ spec=importlib.util.spec_from_file_location('preview',ROOT/'scripts/preview-artw
 preview=importlib.util.module_from_spec(spec);spec.loader.exec_module(preview)
 catalog=preview.native_catalog()
 expected=['starrynight','water-lilies','wheat-stacks','rhone','cypresses','impression-sunrise',
-          'waterloo-bridge','nocturne-bognor','approach-venice','cliff-walk','bridge-villeneuve','parliament-sunset']
+          'waterloo-bridge','nocturne-bognor','approach-venice','cliff-walk','bridge-villeneuve','parliament-sunset',
+          'the-scream','circular-forms','concentric-circles']
 assert list(catalog)==expected, 'Persisted artwork order changed or metadata is incomplete'
-keys=[(str(i+1),False) if i<9 else ('0',False) if i==9 else (str(i-9),True) for i in range(len(expected))]
-assert len(set(keys))==12 and all(len(key)==1 for key,_ in keys)
+assert [e['id'] for e in catalog.values()] == list(range(13)) + [14,15]
+keys=[(str(i+1),False) if i<9 else ('0',False) if i==9 else (str(i-9),True) for i in [e['id'] for e in catalog.values()]]
+assert len(set(keys))==len(expected) and all(len(key)==1 for key,_ in keys)
 artwork=(ROOT/'Artwork.swift').read_text();gallery=(ROOT/'GalleryView.swift').read_text()
 assert 'var shortcutUsesOption: Bool { rawValue >= 10 }' in artwork
 assert 'keyEquivalent = artwork.shortcutKey' in gallery
@@ -29,10 +31,13 @@ for slug,entry in catalog.items():
         assert shader.count('// BEGIN motion: '+slug)==1
         assert shader.count('// END motion: '+slug)==1
         assert 'u.artwork < '+str(entry['id']+.5) in shader
-        preview.make_mask(swift,entry['case'],entry['bounds'])
+        if entry['id'] < 12:
+            preview.make_mask(swift,entry['case'],entry['bounds'])
+        else:
+            assert 'case .'+entry['case']+':' in (ROOT/'MotionStudies.swift').read_text()
     bounds=entry['bounds'];assert bounds[0]>=0 and bounds[1]>=0 and bounds[2]>0 and bounds[3]>0
     assert bounds[0]+bounds[2]<=1.000001 and bounds[1]+bounds[3]<=1.000001
 assert 'THIRD-PARTY-NOTICES.md "$app/Contents/Resources/"' in (ROOT/'build.sh').read_text()
 assert 'CC BY-SA 4.0' in (ROOT/'THIRD-PARTY-NOTICES.md').read_text()
-print('PASS: 12 metadata records in preserved ID order; unique one-character shortcut mappings; resource registrations; protected anchors; seven added motion/mask blocks; unchanged uniform ABI; image license bundling')
+print('PASS: 15 metadata records in preserved ID order; unique shortcuts; resource registrations; anchors; motion/mask registrations; unchanged uniform ABI; license bundling')
 print('NOT RUN: native Swift/AppKit/Metal compilation, keyboard events, layout, video export, wallpaper or lock-screen playback')

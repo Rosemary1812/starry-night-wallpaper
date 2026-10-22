@@ -109,3 +109,12 @@
 "artwork.parliament-sunset.name" = "国会大厦，日落";
 "artwork.parliament-sunset.artist" = "克劳德·莫奈";
 "artwork.parliament-sunset.description" = "暮色河面和暖色倒影细微流动；国会大厦轮廓保持静止。";
+"artwork.the-scream.name" = "呐喊";
+"artwork.the-scream.artist" = "爱德华·蒙克";
+"artwork.the-scream.description" = "天空色带缓慢流动；人物、桥梁与峡湾静止。";
+"artwork.circular-forms.name" = "圆形构图";
+"artwork.circular-forms.artist" = "罗伯特·德洛内";
+"artwork.circular-forms.description" = "三组色环以不同节奏轻轻回旋，画面外围保持静止。";
+"artwork.concentric-circles.name" = "色彩习作：同心圆方格";
+"artwork.concentric-circles.artist" = "瓦西里·康定斯基";
+"artwork.concentric-circles.description" = "十二组圆环错相缓缓回旋；方格边界静止。";

@@ -109,3 +109,12 @@
 "artwork.parliament-sunset.name" = "The Houses of Parliament, Sunset";
 "artwork.parliament-sunset.artist" = "Claude Monet";
 "artwork.parliament-sunset.description" = "Evening river and warm reflections move subtly; the Parliament silhouette remains still.";
+"artwork.the-scream.name" = "The Scream";
+"artwork.the-scream.artist" = "Edvard Munch";
+"artwork.the-scream.description" = "Sky bands ripple slowly; figures, bridge and fjord remain still.";
+"artwork.circular-forms.name" = "Circular Forms";
+"artwork.circular-forms.artist" = "Robert Delaunay";
+"artwork.circular-forms.description" = "Three color groups turn gently at different phases, preserving the outer composition.";
+"artwork.concentric-circles.name" = "Color Study: Squares with Concentric Circles";
+"artwork.concentric-circles.artist" = "Wassily Kandinsky";
+"artwork.concentric-circles.description" = "Twelve circles turn in a slow staggered rhythm; the grid remains still.";

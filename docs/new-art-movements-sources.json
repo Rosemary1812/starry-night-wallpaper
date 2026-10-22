@@ -1,0 +1,68 @@
+[
+  {
+    "slug": "the-scream",
+    "source_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Edvard_Munch_-_The_Scream.jpg/1920px-Edvard_Munch_-_The_Scream.jpg",
+    "record_url": "https://commons.wikimedia.org/wiki/File:Edvard_Munch_-_The_Scream.jpg",
+    "accessed": "2026-10-22",
+    "sha256": "f5fa8f06d4c0d3e2f4ffce9b9702af5f98fe2f08d68fb6316aa75a2d8246c68f",
+    "dimensions": [
+      1920,
+      2374
+    ],
+    "license": "Public domain reproduction",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "attribution": "Edvard Munch, The Scream",
+    "crop": [
+      0.025,
+      0.024,
+      0.89,
+      0.95
+    ],
+    "derivative_obligations": "No share-alike obligation identified on the selected record; retain source credit.",
+    "changes": "Sky pigments advect along four hand-traced ribbon tangents; figures, bridge, fjord, inscription and signature remain still."
+  },
+  {
+    "slug": "circular-forms",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/64/GUGG_Circular_Forms.jpg",
+    "record_url": "https://commons.wikimedia.org/wiki/File:GUGG_Circular_Forms.jpg",
+    "accessed": "2026-10-22",
+    "sha256": "5e49b98c50d81c6efbe26d7a8613ac89ff97de06f57c017923fbdb79bf76f00e",
+    "dimensions": [
+      2999,
+      1824
+    ],
+    "license": "CC0 1.0 reproduction",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "attribution": "Robert Delaunay, Circular Forms",
+    "crop": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "derivative_obligations": "No share-alike obligation identified on the selected record; retain source credit.",
+    "changes": "Three color groups turn gently at different phases, preserving the outer composition."
+  },
+  {
+    "slug": "concentric-circles",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Wassily_Kandinsky_Color_Study._Squares_with_Concentric_Circles.jpg",
+    "record_url": "https://commons.wikimedia.org/wiki/File:Wassily_Kandinsky_Color_Study._Squares_with_Concentric_Circles.jpg",
+    "accessed": "2026-10-22",
+    "sha256": "679d0f0c07e65ab184378961b7fd8e2be13161387aa1bef4f5b28530bc9a82e8",
+    "dimensions": [
+      2400,
+      1792
+    ],
+    "license": "Public domain reproduction",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "attribution": "Wassily Kandinsky, Color Study: Squares with Concentric Circles",
+    "crop": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "derivative_obligations": "No share-alike obligation identified on the selected record; retain source credit.",
+    "changes": "Twelve circles turn in a slow staggered rhythm; the grid remains still."
+  }
+]
