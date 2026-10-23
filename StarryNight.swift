@@ -75,6 +75,9 @@ final class Engine {
     }
 
     static func makeMask(artwork: Artwork = .starryNight) throws -> CGImage {
+        if artwork.rawValue >= Artwork.theScream.rawValue {
+            return try studyMask(artwork: artwork)
+        }
         let width = 2048, height = 1622
         guard let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
             bytesPerRow: width*4, space: CGColorSpaceCreateDeviceRGB(),
@@ -681,7 +684,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         artworkDetails.stringValue = engine.artwork.metadata
         artworkCaption.stringValue = engine.artwork.description
         carousel?.setSelected(engine.artwork)
-        thumbnailRail?.selectedIndex = engine.artwork.rawValue
+        thumbnailRail?.selectedIndex = engine.artwork.catalogIndex
         refreshNavigation()
         window.contentView?.needsLayout = true
         window.contentView?.layoutSubtreeIfNeeded()
@@ -1031,7 +1034,9 @@ if args.count>1 && args[1] != "--ui-check" {
             selected = artwork
         } else { selected = .starryNight }
         let engine = try Engine(resources:resources, artwork: selected)
-        if args[1] == "--snapshot", args.count>=4 {
+        if args[1] == "--capture-cycle", args.count>=3 {
+            try engine.captureStudyCycle(to:URL(fileURLWithPath:args[2]))
+        } else if args[1] == "--snapshot", args.count>=4 {
             try engine.snapshot(to:URL(fileURLWithPath:args[2]),time:Float(args[3]) ?? 0,
                 maskMode:args.contains("--mask"))
         } else if args[1] == "--export", args.count>=3 {
@@ -1060,6 +1065,9 @@ if args.count>1 && args[1] != "--ui-check" {
             }
             let anchors: [(Double, Double)]
             switch selected {
+            case .theScream: anchors = [(0.51,0.59),(0.1,0.45),(0.34,0.39),(0.15,0.96)]
+            case .circularForms: anchors = [(0.01,0.01),(0.99,0.99)]
+            case .concentricCircles: anchors = [(0.01,0.01),(0.99,0.99)]
             case .starryNight: anchors = []
             case .waterLilies: anchors = [(0.74,0.26),(0.81,0.41),(0.6,0.78),(0.415,0.795),(0.6,0.765),(0.76,0.772)]
             case .wheatStacks: anchors = [(0.43,0.55),(0.22,0.6),(0.8,0.75),(0.67,0.275)]

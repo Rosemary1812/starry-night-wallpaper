@@ -138,7 +138,7 @@ final class ArtworkCarouselView: NSView {
     init(resources: URL, liveView: LiveView, selected: Artwork) throws {
         self.liveView = liveView
         self.selectedArtwork = selected
-        self.motion = CarouselMotion(index: selected.rawValue, count: Artwork.allCases.count)
+        self.motion = CarouselMotion(index: selected.catalogIndex, count: Artwork.allCases.count)
         super.init(frame: .zero)
         wantsLayer = true
         layer?.masksToBounds = false
@@ -178,7 +178,7 @@ final class ArtworkCarouselView: NSView {
     func setSelected(_ artwork: Artwork) {
         stopClock()
         selectedArtwork = artwork
-        motion.reset(to: artwork.rawValue)
+        motion.reset(to: artwork.catalogIndex)
         lastDragPoint = nil
         scrolling = false
         liveView.revealAfterRendering()
@@ -193,7 +193,7 @@ final class ArtworkCarouselView: NSView {
 
     override func layout() {
         super.layout()
-        liveView.frame = cardRect(at: Double(motion.nearestSlot(for: selectedArtwork.rawValue)))
+        liveView.frame = cardRect(at: Double(motion.nearestSlot(for: selectedArtwork.catalogIndex)))
     }
 
     private var cardSpacing: CGFloat {
@@ -213,7 +213,7 @@ final class ArtworkCarouselView: NSView {
         guard selectionEnabled else { return }
         lastDragPoint = nil
         scrolling = false
-        motion.select(index: artwork.rawValue, reduceMotion: reduceMotion)
+        motion.select(index: artwork.catalogIndex, reduceMotion: reduceMotion)
         startSettling()
     }
 
@@ -470,7 +470,7 @@ final class ArtworkThumbnailRail: NSView {
     let buttons: [NSButton]
     var selectedIndex = 0 {
         didSet {
-            for button in buttons { button.alphaValue = button.tag == selectedIndex ? 1 : 0.55 }
+            for (index, button) in buttons.enumerated() { button.alphaValue = index == selectedIndex ? 1 : 0.55 }
             needsDisplay = true
         }
     }
@@ -514,7 +514,7 @@ final class ArtworkThumbnailRail: NSView {
 
     func relocalize() {
         for button in buttons {
-            let artwork = Artwork.allCases[button.tag]
+            let artwork = Artwork(rawValue: button.tag)!
             button.toolTip = artwork.title
             button.setAccessibilityLabel(artwork.title)
         }

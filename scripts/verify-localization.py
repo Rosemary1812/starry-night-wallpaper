@@ -11,6 +11,7 @@ slugs = [
     "starrynight", "water-lilies", "wheat-stacks", "rhone", "cypresses",
     "impression-sunrise", "waterloo-bridge", "nocturne-bognor", "approach-venice",
     "cliff-walk", "bridge-villeneuve", "parliament-sunset",
+    "the-scream", "circular-forms", "concentric-circles",
 ]
 tables = {}
 for language in ["en", "zh-Hans", "zh-Hant"]:

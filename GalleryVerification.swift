@@ -26,7 +26,7 @@ extension AppDelegate {
                 return
             }
             framesBefore = preview.presentedFrames
-            selectThumbnail(thumbnailRail.buttons[artworks[index].rawValue])
+            selectThumbnail(thumbnailRail.buttons[artworks[index].catalogIndex])
         }
     }
 
@@ -314,7 +314,7 @@ extension AppDelegate {
                 try writeViewSnapshot(window.contentView!, to: frames.appendingPathComponent(String(format: "%04d.png", frame / 2)))
             }
         }
-        guard carousel.motion.phase == .idle, carousel.motion.selectedIndex == engine.artwork.rawValue else {
+        guard carousel.motion.phase == .idle, carousel.motion.selectedIndex == engine.artwork.catalogIndex else {
             throw failure("Interrupted input did not settle on the selected artwork")
         }
         selectThumbnail(thumbnailRail.buttons[Artwork.waterLilies.rawValue])

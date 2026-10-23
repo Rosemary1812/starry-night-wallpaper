@@ -2,11 +2,13 @@
 
 # StarryNight
 
+本实验分支增加《呐喊》、德洛内《圆形构图》和康定斯基《色彩习作：同心圆方格》，共 15 幅。新作品使用 ⌥⌘3、⌥⌘5、⌥⌘6，抽象画使用 RGB 独立运动区域。下方十二幅合集媒体仍是 v0.3.0 的录制。实验素材、动效取舍和验证记录见 [实验记录](docs/new-art-movements.md)。
+
 [English](README.md) · [下载应用](https://github.com/Rosemary1812/starry-night-wallpaper/releases) · [画作来源](THIRD-PARTY-NOTICES.md)
 
 让画作成为 Mac 上的动态壁纸。StarryNight 用原生画廊展示作品，再通过 Metal 渲染动效：云层沿着笔触流动，水面与倒影起伏，前景主体保持静止。
 
-当前源码包含 **12 幅画作**、无限循环滚动的画廊、每幅画的实时动态预览，以及取自《星空》的黑白应用图标。界面支持简体中文、繁體中文和 English。
+当前源码包含 **15 幅画作**、无限循环滚动的画廊、每幅画的实时动态预览，以及取自《星空》的黑白应用图标。界面支持简体中文、繁體中文和 English。
 
 ![当前 Metal 渲染器中的《星空》动态壁纸](docs/media/starry-night-preview.gif)
 
@@ -164,7 +166,7 @@ mkdir -p dist
 准备好源码素材后运行：
 
 ```sh
-STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=12 zsh scripts/verify-gallery.sh
+STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=15 zsh scripts/verify-gallery.sh
 ```
 
 脚本重新构建控制面板，检查本地化、画廊运动断言与 AppKit 布局，并验证十二幅画的 Metal 循环首尾、运动与主体保护采样点。证据保存在 `dist/gallery-evidence/` 与 `dist/evidence/`。采样点检查不能证明每个主体轮廓像素都固定不动。

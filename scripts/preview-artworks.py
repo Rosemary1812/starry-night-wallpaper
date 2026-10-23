@@ -29,8 +29,14 @@ def block_after(source, marker):
 def native_catalog():
     text = (ROOT / 'Artwork.swift').read_text()
     cases = []
+    ids = []
+    next_id = 0
     for line in text.split('// The Met reproduction')[0].splitlines():
-        if line.strip().startswith('case '): cases.extend(line.strip()[5:].split(', '))
+        if line.strip().startswith('case '):
+            for declaration in line.strip()[5:].split(', '):
+                parts = declaration.split('=')
+                if len(parts) == 2: next_id = int(parts[1])
+                cases.append(parts[0].strip()); ids.append(next_id); next_id += 1
     def strings(name):
         body = block_after(text, 'var ' + name + ': String {')
         return re.findall(r'"([^"\n]*)"', body)
@@ -47,8 +53,8 @@ def native_catalog():
         r'case \.(\w+): return CGRect\(x:\s*('+FLOAT+r'), y:\s*('+FLOAT+r'), width:\s*('+FLOAT+r'), height:\s*('+FLOAT+r')\)', text)}
     artists = {'starryNight':'文森特·梵高','rhone':'文森特·梵高','cypresses':'文森特·梵高',
         'nocturneBognor':'詹姆斯·麦克尼尔·惠斯勒','approachVenice':'约瑟夫·马洛德·威廉·特纳','bridgeVilleneuve':'阿尔弗雷德·西斯莱'}
-    return {name:dict(id=i,case=case,name=title.split(' · ')[-1],title=title,year=year,
-        artist=artists.get(case,'克劳德·莫奈'),description=description,bounds=bounds.get(case,[0,0,1,1]))
+    return {name:dict(id=ids[i],case=case,name=title.split(' · ')[-1],title=title,year=year,
+        artist=resources['artwork.'+name+'.artist'] if 'L10n.tr' in text else artists.get(case,'克劳德·莫奈'),description=description,bounds=bounds.get(case,[0,0,1,1]))
         for i,(case,name,title,year,description) in enumerate(zip(cases,names,titles,years,descriptions))}
 
 def make_mask(swift,case,bounds):
@@ -69,6 +75,8 @@ def make_mask(swift,case,bounds):
 def generate(output,artwork):
     source=(ROOT/'Sky.metal').read_text();swift=(ROOT/'StarryNight.swift').read_text()
     meta=native_catalog()[artwork];bounds=meta['bounds'];case=meta['case']
+    if meta['id'] >= 12:
+        raise ValueError('RGB study masks require the native Metal renderer; use --snapshot or --export')
     output.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(ROOT/'THIRD-PARTY-NOTICES.md',output/'THIRD-PARTY-NOTICES.md')
     make_mask(swift,case,bounds).save(output/'mask.png')
