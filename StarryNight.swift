@@ -516,7 +516,10 @@ final class LiveView: MTKView, MTKViewDelegate {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, ArtworkCarouselDelegate {
-    let desktopLyrics = DesktopLyricsController()
+    let desktopLyrics = DesktopLyricsController(
+        isolatedVerification: CommandLine.arguments.contains("--lyrics-smoke"),
+        storageDirectory: (Bundle.main.object(forInfoDictionaryKey: "LyricsValidationStoreDirectory") as? String)
+            .map { URL(fileURLWithPath: $0, isDirectory: true) })
     var lyricsVerification: LyricsLiveVerification?
     var engine: Engine!
     let animation = AnimationState()

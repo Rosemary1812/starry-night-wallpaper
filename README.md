@@ -208,3 +208,13 @@ Start with the [painting wallpaper authoring skill](.agents/skills/author-painti
 Code is licensed under MIT. The wallpaper extension derives from [Phosphene](https://github.com/kageroumado/phosphene), and the app bundles Adobe Source Serif 4 under the SIL Open Font License.
 
 Painting reproductions have their own terms. In particular, the *Waterloo Bridge* reproduction and its animated derivatives retain **CC BY-SA 4.0**, credited to Claude Monet / Art Institute of Chicago, via Wikimedia Commons uploader Maltaper. The collection GIF includes that derivative. Read [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) before redistributing artwork media.
+
+## Desktop lyrics
+
+The lyrics branch adds an opt-in Apple Music companion overlay with automatic,
+strict recording matching through LRCLIB, offline lyric/offset storage and manual
+LRC fallback. Automatic network lookup is off until you enable its explicit menu
+setting. The overlay paints only text, not a background panel. See
+[setup, privacy, matching and verification](docs/automatic-lyrics.md), or open the
+[offline style comparison](docs/lyrics-style-preview.html). The latter is a web
+style simulation, not native macOS compositing verification.

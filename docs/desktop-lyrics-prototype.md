@@ -1,5 +1,7 @@
 # Desktop lyrics prototype
 
+Historical manual-import implementation. For the newer automatic-lookup and invisible-window changes, see [automatic lyrics](automatic-lyrics.md); the native acceptance evidence below does not verify those changes.
+
 Current acceptance results and limitations: [2026-10-23 real-song acceptance](desktop-lyrics-acceptance.md). Dated evidence sections below are historical and are superseded where the newer report says so.
 
 ## Acceptance criteria (defined before implementation)

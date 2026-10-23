@@ -208,3 +208,11 @@ zsh scripts/record-readme-media.sh
 代码使用 MIT 许可。壁纸扩展派生自 [Phosphene](https://github.com/kageroumado/phosphene)，内置的 Adobe Source Serif 4 字体使用 SIL Open Font License。
 
 画作复制图使用各自的许可。《滑铁卢桥》的复制图及其动画衍生内容保留 **CC BY-SA 4.0**，署名为 Claude Monet / Art Institute of Chicago，经 Wikimedia Commons 上传者 Maltaper 提供。十二幅画总览 GIF 包含该衍生内容。分发画作媒体前，请阅读 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+## 桌面歌词
+
+歌词分支提供 Apple Music 桌面歌词：显式开启后从 LRCLIB 自动查找严格匹配的录音版本，
+歌词及每曲偏移保存在本地，离线可读，手动导入 LRC 优先。联网选项默认关闭；开启前会说明
+外发的歌名、歌手、专辑与时长。显示层只绘制文字，不再绘制背景面板。
+详见[使用、隐私、匹配规则与验收边界](docs/automatic-lyrics.md)，以及
+[离线样式对比](docs/lyrics-style-preview.html)。网页仅模拟样式，不代表 macOS 原生合成实测。

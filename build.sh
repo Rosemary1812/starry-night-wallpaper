@@ -26,7 +26,7 @@ done
 xcrun swiftc -j "${STARRY_BUILD_JOBS:-2}" -O -swift-version 5 -module-cache-path "$PWD/.module-cache" \
   -framework AppKit -framework Metal -framework MetalKit -framework CoreImage \
   -framework AVFoundation -framework UniformTypeIdentifiers \
-  LyricsCore.swift MusicPlaybackSource.swift DesktopLyrics.swift LyricsVerification.swift L10n.swift AppTypography.swift Artwork.swift CarouselMotion.swift GalleryView.swift GalleryVerification.swift StarryNight.swift WallpaperBridge.swift -o "$app/Contents/MacOS/StarryNight"
+  LyricsCore.swift LyricsStore.swift LyricsProvider.swift LyricsService.swift MusicPlaybackSource.swift DesktopLyrics.swift LyricsVerification.swift L10n.swift AppTypography.swift Artwork.swift CarouselMotion.swift GalleryView.swift GalleryVerification.swift StarryNight.swift WallpaperBridge.swift -o "$app/Contents/MacOS/StarryNight"
 if [[ "${STARRY_SKIP_EXTENSION_BUILD:-0}" != 1 ]]; then zsh build-extension.sh; fi
 cp THIRD-PARTY-NOTICES.md "$app/Contents/Resources/"
 cp WallpaperExtension/PHOSPHENE-LICENSE.txt "$app/Contents/Resources/"
