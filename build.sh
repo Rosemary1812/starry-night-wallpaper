@@ -23,10 +23,10 @@ cp "$painting" "$app/Contents/Resources/starrynight.jpg"
 for artwork in water-lilies wheat-stacks rhone cypresses impression-sunrise waterloo-bridge nocturne-bognor approach-venice cliff-walk bridge-villeneuve parliament-sunset; do
   cp "$assets_dir/$artwork.jpg" "$app/Contents/Resources/$artwork.jpg"
 done
-xcrun swiftc -O -swift-version 5 -module-cache-path "$PWD/.module-cache" \
+xcrun swiftc -j "${STARRY_BUILD_JOBS:-2}" -O -swift-version 5 -module-cache-path "$PWD/.module-cache" \
   -framework AppKit -framework Metal -framework MetalKit -framework CoreImage \
   -framework AVFoundation -framework UniformTypeIdentifiers \
-  L10n.swift AppTypography.swift Artwork.swift CarouselMotion.swift GalleryView.swift GalleryVerification.swift StarryNight.swift WallpaperBridge.swift -o "$app/Contents/MacOS/StarryNight"
+  LyricsCore.swift MusicPlaybackSource.swift DesktopLyrics.swift LyricsVerification.swift L10n.swift AppTypography.swift Artwork.swift CarouselMotion.swift GalleryView.swift GalleryVerification.swift StarryNight.swift WallpaperBridge.swift -o "$app/Contents/MacOS/StarryNight"
 if [[ "${STARRY_SKIP_EXTENSION_BUILD:-0}" != 1 ]]; then zsh build-extension.sh; fi
 cp THIRD-PARTY-NOTICES.md "$app/Contents/Resources/"
 cp WallpaperExtension/PHOSPHENE-LICENSE.txt "$app/Contents/Resources/"

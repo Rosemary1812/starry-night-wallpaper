@@ -516,6 +516,8 @@ final class LiveView: MTKView, MTKViewDelegate {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, ArtworkCarouselDelegate {
+    let desktopLyrics = DesktopLyricsController()
+    var lyricsVerification: LyricsLiveVerification?
     var engine: Engine!
     let animation = AnimationState()
     var window: NSWindow!
@@ -550,6 +552,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
     var carouselMoving = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Only local acceptance builds add this key; the distributed Info.plist does not.
+        if let configuration = Bundle.main.object(forInfoDictionaryKey: "LyricsAcceptance") as? [String: String],
+           let lrc = configuration["lrc"], let output = configuration["output"], let title = configuration["title"] {
+            lyricsVerification = LyricsLiveVerification(controller: desktopLyrics)
+            lyricsVerification?.run(lrc: URL(fileURLWithPath: lrc), output: URL(fileURLWithPath: output), expectedTitle: title)
+            return
+        }
+        if let index = CommandLine.arguments.firstIndex(of: "--lyrics-live-check"), CommandLine.arguments.count > index + 3 {
+            lyricsVerification = LyricsLiveVerification(controller: desktopLyrics)
+            lyricsVerification?.run(lrc: URL(fileURLWithPath: CommandLine.arguments[index + 1]),
+                                    output: URL(fileURLWithPath: CommandLine.arguments[index + 2]),
+                                    expectedTitle: CommandLine.arguments[index + 3])
+            return
+        }
+        if let index = CommandLine.arguments.firstIndex(of: "--lyrics-smoke"), CommandLine.arguments.count > index + 1 {
+            desktopLyrics.runSmokeCheck(output: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
+            return
+        }
         let selected = Artwork(rawValue: UserDefaults.standard.integer(forKey: "artwork")) ?? .starryNight
         do { engine = try Engine(resources: Bundle.main.resourceURL!, artwork: selected) }
         catch { showError(error); NSApp.terminate(nil); return }
@@ -575,6 +595,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         main.submenu?.addItem(withTitle:L10n.tr("menu.about"),action:#selector(about),keyEquivalent:"")
         main.submenu?.addItem(NSMenuItem.separator())
         main.submenu?.addItem(withTitle:L10n.tr("menu.quit"),action:#selector(quit),keyEquivalent:"q")
+        main.submenu?.addItem(desktopLyrics.menu())
         menu.addItem(main)
         NSApp.mainMenu = menu
         guard verificationOutput == nil else { return }
@@ -587,6 +608,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
         status.addItem(NSMenuItem.separator())
         status.addItem(withTitle:L10n.tr("menu.quitKeepsWallpaper"),action:#selector(quit),keyEquivalent:"")
         for item in status.items { item.target = self }
+        status.addItem(desktopLyrics.menu())
         statusItem.menu = status
     }
 
@@ -1022,7 +1044,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, Artw
 struct StarryNightMain {
 static func main() {
 let args = CommandLine.arguments
-if args.count>1 && args[1] != "--ui-check" {
+if args.count>1 && args[1] != "--ui-check" && args[1] != "--lyrics-smoke" && args[1] != "--lyrics-live-check" {
     do {
         let resources = Bundle.main.resourceURL!
         let selected: Artwork
