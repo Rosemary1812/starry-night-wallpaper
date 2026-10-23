@@ -2,11 +2,13 @@
 
 # StarryNight
 
+This experimental branch adds The Scream, Circular Forms, and Color Study: Squares with Concentric Circles, for 15 paintings. Select them with Option-Command-3, 5 and 6. Abstract studies use independent RGB motion groups. The twelve-painting collection media below still depicts v0.3.0. See the [study notes](docs/new-art-movements.md) for sources, motion decisions, and verification.
+
 [简体中文](README.zh-CN.md) · [Download](https://github.com/Rosemary1812/starry-night-wallpaper/releases) · [Painting sources](THIRD-PARTY-NOTICES.md)
 
 Turn paintings into animated wallpapers on your Mac. StarryNight pairs a native gallery with a Metal renderer: clouds follow the brushwork, water and reflections ripple, and foreground subjects stay still.
 
-The current source has **12 paintings**, an infinitely scrolling gallery, live previews for every painting, and a black-and-white app icon adapted from *The Starry Night*. The interface supports English, Simplified Chinese, and Traditional Chinese.
+The current source has **15 paintings**, an infinitely scrolling gallery, live previews for every painting, and a black-and-white app icon adapted from *The Starry Night*. The interface supports English, Simplified Chinese, and Traditional Chinese.
 
 ![The Starry Night, rendered by the current Metal engine](docs/media/starry-night-preview.gif)
 
@@ -164,7 +166,7 @@ The applied status reports whether the provider is selected in macOS settings. I
 With the source assets available, run:
 
 ```sh
-STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=12 zsh scripts/verify-gallery.sh
+STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=15 zsh scripts/verify-gallery.sh
 ```
 
 This rebuilds the control panel, checks localization, runs the carousel's motion assertions, captures AppKit layouts, and checks native Metal loop endpoints, movement, and protected-subject sample points for all twelve paintings. Evidence goes into `dist/gallery-evidence/` and `dist/evidence/`. Protected-point checks do not prove that every silhouette pixel is fixed.

@@ -11,6 +11,38 @@ struct Parameters {
 };
 struct VertexOut { float4 position [[position]]; float2 uv; };
 
+// Source-space ribbon heights sampled from the red/yellow/blue sky boundaries.
+float2 screamRibbon(float x, int ribbon) {
+    constexpr float heights[4][9] = {
+        {.098,.099,.085,.078,.091,.092,.087,.091,.098},
+        {.153,.166,.156,.144,.155,.150,.137,.123,.139},
+        {.228,.218,.233,.249,.241,.218,.191,.178,.198},
+        {.286,.273,.286,.302,.304,.291,.266,.258,.271}
+    };
+    float position = clamp((x-.045)/.10625,0.0,7.9999);
+    int i = int(position);
+    float t = fract(position);
+    float a=heights[ribbon][max(i-1,0)], b=heights[ribbon][i];
+    float c=heights[ribbon][i+1], d=heights[ribbon][min(i+2,8)];
+    float y=.5*((2*b)+(-a+c)*t+(2*a-5*b+4*c-d)*t*t+(-a+3*b-3*c+d)*t*t*t);
+    float slope=.5*((-a+c)+2*(2*a-5*b+4*c-d)*t+3*(-a+3*b-3*c+d)*t*t)/.10625;
+    return float2(y,slope);
+}
+
+float2 screamFlow(float2 p) {
+    float2 sum = float2(0);
+    float total = 0;
+    for (int band=0; band<4; band++) {
+        float2 ribbon=screamRibbon(p.x,band);
+        float distance=(p.y-ribbon.x)/.027;
+        float weight=exp(-distance*distance);
+        float speed=.013+float(band)*.002;
+        sum += float2(1,ribbon.y)*speed*weight;
+        total += weight;
+    }
+    return sum/max(total,.001);
+}
+
 vertex VertexOut vertexMain(uint id [[vertex_id]]) {
     float2 points[] = {float2(-1,-1), float2(3,-1), float2(-1,3)};
     float2 p = points[id];
@@ -65,10 +97,61 @@ fragment float4 fragmentMain(VertexOut in [[stage_in]],
     if(u.aspect>imageAspect) p.y=(p.y-.5)*imageAspect/u.aspect+.5;
     else p.x=(p.x-.5)*u.aspect/imageAspect+.5;
     float4 original = painting.sample(s,p);
-    float m = maskAt(mask,p);
+    float3 groups = mask.sample(s,p).rgb;
+    float m = u.artwork > 13.5 ? max(groups.r,max(groups.g,groups.b)) : maskAt(mask,p);
     if(u.showMask>.5) return float4(mix(original.rgb, float3(.23,.80,.96),m*.65),1);
     if(m<.001 || u.strength==0.0) return original;
     float angle = fract(u.time/24.0) * (2.0 * M_PI_F);
+    if (u.artwork > 11.5) {
+        float2 offset = float2(0);
+        if (u.artwork < 12.5) {
+            // BEGIN motion: the-scream
+            // Follow hand-traced pigment ribbons, in the uncropped source coordinates.
+            float2 source = p*float2(.89,.95)+float2(.025,.024);
+            // Integrate two staggered traces. The invisible reset preserves a continuous current.
+            float phase = fract(u.time/24.0);
+            float2 traces[2];
+            for (int layer=0; layer<2; layer++) {
+                float age = (layer == 0 ? phase : fract(phase+.5))-.5;
+                float2 q = source;
+                for (int step=0; step<8; step++) {
+                    float2 qp = (q-float2(.025,.024))/float2(.89,.95);
+                    float quiet = maskAt(mask,qp);
+                    float2 v = screamFlow(q)*u.strength*quiet;
+                    float2 midpoint = q-v*(age/16.0);
+                    q -= screamFlow(midpoint)*u.strength*quiet*(age/8.0);
+                }
+                traces[layer] = (q-float2(.025,.024))/float2(.89,.95);
+            }
+            float weight = .5-.5*cos(angle);
+            return mix(painting.sample(s,traces[1]),painting.sample(s,traces[0]),weight);
+            // END motion: the-scream
+        } else if (u.artwork < 14.5) {
+            // BEGIN motion: circular-forms
+            float2 a = p-float2(.23,.34);
+            float2 b = p-float2(.715,.48);
+            float2 c = p-float2(.845,.225);
+            offset = float2(-a.y,a.x)*groups.r*.026*sin(angle)
+                - float2(-b.y,b.x)*groups.g*.018*sin(angle+.8)
+                + float2(-c.y,c.x)*groups.b*.04*sin(angle+1.6);
+            // END motion: circular-forms
+        } else if (u.artwork < 15.5) {
+            // BEGIN motion: concentric-circles
+            float2 cell = floor(p*float2(4,3));
+            float2 center = (cell+.5)/float2(4,3);
+            float2 d = p-center;
+            float phase = dot(cell,float2(.85,1.3));
+            offset = float2(-d.y,d.x)*.045*sin(angle+phase);
+            // END motion: concentric-circles
+        }
+        float2 displacement = offset*u.strength*m;
+        float safety = m;
+        for (int step=1; step<=6; step++) {
+            float3 g = mask.sample(s,p+displacement*(float(step)/6.0)).rgb;
+            safety = min(safety,max(g.r,max(g.g,g.b)));
+        }
+        return painting.sample(s,p+displacement*smoothstep(0.0,.2,safety));
+    }
     if (u.artwork > .5) {
         float2 offset = float2(0);
         float light = 1.0;

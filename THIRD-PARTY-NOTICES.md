@@ -51,3 +51,13 @@ Phosphene application is installed or required.
 The native wallpaper extension uses private macOS APIs. Compatibility with
 future macOS versions is not guaranteed. This local ad-hoc-signed build is not
 notarized or intended as a generally distributable installer.
+
+## Experimental motion studies
+
+Sources checked 2026-10-22. These animations are modified reproductions, not original artist animations.
+
+- **The Scream — Edvard Munch**. [Source record](https://commons.wikimedia.org/wiki/File:Edvard_Munch_-_The_Scream.jpg); [downloaded reproduction](https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Edvard_Munch_-_The_Scream.jpg/1920px-Edvard_Munch_-_The_Scream.jpg). Commons public domain reproduction (PDM 1.0). Frame cropped to normalized (0.025, 0.024, 0.89, 0.95); sky animated.
+- **Circular Forms — Robert Delaunay**. [Source record](https://commons.wikimedia.org/wiki/File:GUGG_Circular_Forms.jpg); [downloaded reproduction](https://upload.wikimedia.org/wikipedia/commons/6/64/GUGG_Circular_Forms.jpg). Reproduction CC0 1.0; original public domain. Full image, aspect-fill at playback; local animation added.
+- **Color Study: Squares with Concentric Circles — Wassily Kandinsky**. [Source record](https://commons.wikimedia.org/wiki/File:Wassily_Kandinsky_Color_Study._Squares_with_Concentric_Circles.jpg); [downloaded reproduction](https://upload.wikimedia.org/wikipedia/commons/e/e9/Wassily_Kandinsky_Color_Study._Squares_with_Concentric_Circles.jpg). Commons public domain reproduction (PDM 1.0). Full image, aspect-fill at playback; local animation added.
+
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) · [PDM 1.0](https://creativecommons.org/publicdomain/mark/1.0/). Source hashes and dimensions are recorded in docs/new-art-movements-sources.json.
