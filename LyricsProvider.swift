@@ -59,11 +59,18 @@ struct LRCLIBRecord: Decodable {
     let syncedLyrics: String?
 }
 
-/// Read-only, no-key lookup. No search, upload, authentication or automatic retry.
-/// Official contract: https://github.com/tranxuanthang/lrclib/blob/main/server/src/routes/get_lyrics_by_metadata.rs
+/// Read-only, no-key lookup. No upload, authentication or automatic retry.
+/// An exact lookup comes first; when it has no timed lyrics for this recording,
+/// one search by title and artist looks for the same song on another release.
+/// Official contracts:
+/// https://github.com/tranxuanthang/lrclib/blob/main/server/src/routes/get_lyrics_by_metadata.rs
+/// https://github.com/tranxuanthang/lrclib/blob/main/server/src/routes/search_lyrics.rs
 final class LRCLIBProvider: LyricsProviding {
     static let endpoint = URL(string: "https://lrclib.net/api/get")!
+    static let searchEndpoint = URL(string: "https://lrclib.net/api/search")!
     static let maximumResponseBytes = 1_048_576
+    /// A search returns up to 20 records, each with its full lyrics.
+    static let maximumSearchResponseBytes = 4 * maximumResponseBytes
     static let timeout: TimeInterval = 12
     static let userAgent = "StarryNight/0.3.0 (https://github.com/Rosemary1812/starry-night-wallpaper)"
     static let durationTolerance: TimeInterval = 2
@@ -93,15 +100,39 @@ final class LRCLIBProvider: LyricsProviding {
             return task
         }
         let clock = now
+        let transport = self.transport
         let underlying = transport.send(request, maximumResponseBytes: Self.maximumResponseBytes) { result in
-            let mapped = result.flatMap { response -> Result<LyricsFetchOutcome, Error> in
-                do { return .success(try Self.outcome(for: response, track: track, now: clock())) }
-                catch { return .failure(error) }
+            let exact = result.flatMap { response in
+                Result { try Self.outcome(for: response, track: track, now: clock()) }
             }
-            task.finish(mapped)
+            guard case .success(let outcome) = exact, Self.searchesAfter(outcome),
+                  let search = try? Self.makeSearchRequest(for: track) else {
+                task.finish(exact)
+                return
+            }
+            guard task.advance() else { return }
+            let second = transport.send(search, maximumResponseBytes: Self.maximumSearchResponseBytes) { result in
+                // An oversized result list says nothing new about this recording.
+                if case .failure(let error) = result, error as? LRCLIBError == .responseTooLarge {
+                    task.finish(.success(outcome))
+                    return
+                }
+                task.finish(result.flatMap { response in
+                    Result { try Self.searchOutcome(for: response, track: track, otherwise: outcome, now: clock()) }
+                })
+            }
+            task.install(second, stage: 1)
         }
-        task.install(underlying)
+        task.install(underlying, stage: 0)
         return task
+    }
+
+    /// Instrumentals are final; every other miss may exist under another release.
+    static func searchesAfter(_ outcome: LyricsFetchOutcome) -> Bool {
+        switch outcome {
+        case .notFound, .rejected, .noTimedLyrics: return true
+        case .found, .instrumental: return false
+        }
     }
 
     /// Only canonical Unicode, case and whitespace normalization. In particular,
@@ -111,6 +142,16 @@ final class LRCLIBProvider: LyricsProviding {
             .lowercased(with: Locale(identifier: "en_US_POSIX"))
             .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
             .precomposedStringWithCanonicalMapping
+    }
+
+    /// Letters and digits only, so "Song (2013 Remaster)" equals "Song - 2013 Remaster"
+    /// and "A & B" equals "A, B". The words themselves, version labels included, must agree.
+    static func looseMetadata(_ value: String) -> String {
+        let folded = value.precomposedStringWithCompatibilityMapping
+            .lowercased(with: Locale(identifier: "en_US_POSIX"))
+        return String(String.UnicodeScalarView(folded.unicodeScalars.map {
+            CharacterSet.alphanumerics.contains($0) ? $0 : " "
+        })).split(separator: " ").joined(separator: " ")
     }
 
     static func hasUsableMetadata(_ track: MusicTrack) -> Bool {
@@ -123,14 +164,26 @@ final class LRCLIBProvider: LyricsProviding {
     }
 
     static func makeRequest(for track: MusicTrack) throws -> URLRequest {
-        guard hasUsableMetadata(track) else { throw LRCLIBError.invalidMetadata }
-        var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
+        try makeRequest(to: endpoint, for: track, items: [
             URLQueryItem(name: "track_name", value: track.title),
             URLQueryItem(name: "artist_name", value: track.artist),
             URLQueryItem(name: "album_name", value: track.album),
             URLQueryItem(name: "duration", value: String(track.duration))
-        ]
+        ])
+    }
+
+    static func makeSearchRequest(for track: MusicTrack) throws -> URLRequest {
+        try makeRequest(to: searchEndpoint, for: track, items: [
+            URLQueryItem(name: "track_name", value: track.title),
+            URLQueryItem(name: "artist_name", value: track.artist)
+        ])
+    }
+
+    private static func makeRequest(to endpoint: URL, for track: MusicTrack,
+                                    items: [URLQueryItem]) throws -> URLRequest {
+        guard hasUsableMetadata(track) else { throw LRCLIBError.invalidMetadata }
+        var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false)!
+        components.queryItems = items
         // application/x-www-form-urlencoded servers interpret a literal '+'
         // as a space, even though URLComponents permits it in query values.
         components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
@@ -157,21 +210,77 @@ final class LRCLIBProvider: LyricsProviding {
         }
     }
 
-    static func outcome(for payload: LyricsHTTPResponse, track: MusicTrack,
-                        now: Date = Date()) throws -> LyricsFetchOutcome {
-        guard payload.data.count <= maximumResponseBytes else { throw LRCLIBError.responseTooLarge }
+    /// The same song on any release: title and artist agree word for word and
+    /// the duration is within tolerance. The album is not compared.
+    static func looselyMatches(_ record: LRCLIBRecord, track: MusicTrack) -> Bool {
+        guard hasUsableMetadata(track), record.id > 0,
+              let title = record.trackName, let artist = record.artistName,
+              let duration = record.duration, duration.isFinite, duration > 0,
+              abs(duration - track.duration) <= durationTolerance else { return false }
+        return zip([title, artist], [track.title, track.artist]).allSatisfy {
+            let remote = looseMetadata($0.0)
+            return !remote.isEmpty && remote == looseMetadata($0.1)
+        }
+    }
+
+    /// Returns the body of a 200 response, nil for 404, and throws otherwise.
+    private static func body(of payload: LyricsHTTPResponse, from endpoint: URL,
+                             limit: Int, now: Date) throws -> Data? {
+        guard payload.data.count <= limit else { throw LRCLIBError.responseTooLarge }
         // Recheck the destination even for injected transports.
-        guard let url = payload.response.url, isAllowedURL(url) else { throw LRCLIBError.invalidResponse }
+        guard let url = payload.response.url, isAllowedURL(url, endpoint: endpoint) else {
+            throw LRCLIBError.invalidResponse
+        }
         let status = payload.response.statusCode
         let retry = retryAfter(payload.response.value(forHTTPHeaderField: "Retry-After"), now: now)
-        if status == 404 { return .notFound }
+        if status == 404 { return nil }
         if status == 429 { throw LRCLIBError.rateLimited(retryAfter: retry ?? 60) }
         if (300...399).contains(status) { throw LRCLIBError.redirectNotAllowed }
         guard status == 200 else { throw LRCLIBError.http(status: status, retryAfter: retry) }
+        return payload.data
+    }
+
+    static func outcome(for payload: LyricsHTTPResponse, track: MusicTrack,
+                        now: Date = Date()) throws -> LyricsFetchOutcome {
+        guard let data = try body(of: payload, from: endpoint, limit: maximumResponseBytes, now: now) else {
+            return .notFound
+        }
         let record: LRCLIBRecord
-        do { record = try JSONDecoder().decode(LRCLIBRecord.self, from: payload.data) }
+        do { record = try JSONDecoder().decode(LRCLIBRecord.self, from: data) }
         catch { throw LRCLIBError.invalidResponse }
         guard strictlyMatches(record, track: track) else { return .rejected }
+        return lyricsOutcome(of: record, track: track)
+    }
+
+    /// Picks the closest loosely matching record with usable timed lyrics, or
+    /// keeps what the exact lookup concluded.
+    static func searchOutcome(for payload: LyricsHTTPResponse, track: MusicTrack,
+                              otherwise exact: LyricsFetchOutcome,
+                              now: Date = Date()) throws -> LyricsFetchOutcome {
+        guard let data = try body(of: payload, from: searchEndpoint,
+                                  limit: maximumSearchResponseBytes, now: now) else { return exact }
+        // One malformed record must not hide the others.
+        struct Entry: Decodable {
+            let record: LRCLIBRecord?
+            init(from decoder: Decoder) { record = try? LRCLIBRecord(from: decoder) }
+        }
+        guard let entries = try? JSONDecoder().decode([Entry].self, from: data) else {
+            throw LRCLIBError.invalidResponse
+        }
+        let album = looseMetadata(track.album)
+        func rank(_ record: LRCLIBRecord) -> (Int, TimeInterval, Int) {
+            (record.albumName.map(looseMetadata) == album ? 0 : 1,
+             abs((record.duration ?? .infinity) - track.duration), record.id)
+        }
+        let matches: [(LRCLIBRecord, LyricsMatch)] = entries.compactMap { entry in
+            guard let record = entry.record, looselyMatches(record, track: track),
+                  case .found(let match) = lyricsOutcome(of: record, track: track) else { return nil }
+            return (record, match)
+        }
+        return matches.min { rank($0.0) < rank($1.0) }.map { .found($0.1) } ?? exact
+    }
+
+    private static func lyricsOutcome(of record: LRCLIBRecord, track: MusicTrack) -> LyricsFetchOutcome {
         if record.instrumental { return .instrumental }
         guard let lrc = record.syncedLyrics,
               !lrc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .noTimedLyrics }
@@ -184,9 +293,11 @@ final class LRCLIBProvider: LyricsProviding {
         return .found(LyricsMatch(lrc: lrc, providerID: record.id))
     }
 
-    static func isAllowedURL(_ url: URL) -> Bool {
-        url.scheme == "https" && url.host == "lrclib.net" &&
-            (url.port == nil || url.port == 443) && url.path == "/api/get" &&
+    /// Either endpoint by default; `endpoint` narrows it to the one a response must come from.
+    static func isAllowedURL(_ url: URL, endpoint: URL? = nil) -> Bool {
+        let paths = endpoint.map { [$0.path] } ?? [Self.endpoint.path, searchEndpoint.path]
+        return url.scheme == "https" && url.host == "lrclib.net" &&
+            (url.port == nil || url.port == 443) && paths.contains(url.path) &&
             url.user == nil && url.password == nil && url.fragment == nil
     }
 
@@ -216,6 +327,7 @@ private final class LyricsFetchTask: LyricsRequest {
     private var cancelled = false
     private var finished = false
     private var underlying: LyricsRequest?
+    private var stage = 0
     private let queue: DispatchQueue
     private let completion: (Result<LyricsFetchOutcome, Error>) -> Void
 
@@ -224,12 +336,24 @@ private final class LyricsFetchTask: LyricsRequest {
         self.completion = completion
     }
 
-    func install(_ request: LyricsRequest) {
+    /// A transport may complete before `send` returns, so the first request can
+    /// be installed after the second has started; it must not replace it.
+    func install(_ request: LyricsRequest, stage: Int) {
         lock.lock()
         let shouldCancel = cancelled || finished
-        if !shouldCancel { underlying = request }
+        if !shouldCancel && stage == self.stage { underlying = request }
         lock.unlock()
         if shouldCancel { request.cancel() }
+    }
+
+    /// Moves to the search request, once, unless the fetch has already ended.
+    func advance() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !cancelled, !finished, stage == 0 else { return false }
+        stage = 1
+        underlying = nil
+        return true
     }
 
     func cancel() {
@@ -282,7 +406,7 @@ final class LRCLIBURLSessionTransport: LyricsHTTPTransport {
     @discardableResult
     func send(_ request: URLRequest, maximumResponseBytes: Int,
               completion: @escaping (Result<LyricsHTTPResponse, Error>) -> Void) -> LyricsRequest {
-        let operation = LRCLIBHTTPOperation(limit: min(max(1, maximumResponseBytes), LRCLIBProvider.maximumResponseBytes),
+        let operation = LRCLIBHTTPOperation(limit: min(max(1, maximumResponseBytes), LRCLIBProvider.maximumSearchResponseBytes),
                                            completion: completion)
         let configuration = Self.sessionConfiguration()
         if let protocolClasses = protocolClasses { configuration.protocolClasses = protocolClasses }

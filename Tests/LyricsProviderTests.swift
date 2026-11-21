@@ -166,7 +166,7 @@ private final class StubLyricsURLProtocol: URLProtocol {
                         MusicTrack(id: "x", title: String(repeating: "x", count: 4097), artist: "Artist", album: "Album", duration: 100)] {
             fails(.invalidMetadata) { _ = try LRCLIBProvider.makeRequest(for: invalid) }
         }
-        for url in ["http://lrclib.net/api/get", "https://evil.test/api/get", "https://lrclib.net/api/search",
+        for url in ["http://lrclib.net/api/get", "https://evil.test/api/get", "https://lrclib.net/api/publish",
                     "https://user:password@lrclib.net/api/get", "https://lrclib.net:8080/api/get", "https://lrclib.net/api/get#fragment"] {
             check(!LRCLIBProvider.isAllowedURL(URL(string: url)!), "destination constraint")
         }
@@ -198,7 +198,7 @@ private final class StubLyricsURLProtocol: URLProtocol {
         }
         callbackQueue.sync {}
         check(callbacks == 1, "duplicate transport completion suppressed")
-        check(fake.requests.count == 1 && fake.limits == [LRCLIBProvider.maximumResponseBytes], "one bounded request; no search fallback")
+        check(fake.requests.count == 1 && fake.limits == [LRCLIBProvider.maximumResponseBytes], "an exact match makes one bounded request")
         let invalidFake = FakeLyricsTransport()
         let invalidProvider = LRCLIBProvider(transport: invalidFake, callbackQueue: callbackQueue)
         let invalidDone = DispatchSemaphore(value: 0)
@@ -232,6 +232,139 @@ private final class StubLyricsURLProtocol: URLProtocol {
             errorDone.signal()
         }
         check(errorDone.wait(timeout: .now() + 2) == .success, "transport errors preserved")
+
+        // Search fallback: the same song filed under another release.
+        check(LRCLIBProvider.isAllowedURL(LRCLIBProvider.searchEndpoint), "search endpoint allowed")
+        check(!LRCLIBProvider.isAllowedURL(LRCLIBProvider.searchEndpoint, endpoint: LRCLIBProvider.endpoint) &&
+              !LRCLIBProvider.isAllowedURL(LRCLIBProvider.endpoint, endpoint: LRCLIBProvider.searchEndpoint),
+              "a response must come from the endpoint that was asked")
+        let searchRequest = try LRCLIBProvider.makeSearchRequest(for: special)
+        let searchQuery = URLComponents(url: searchRequest.url!, resolvingAgainstBaseURL: false)!.queryItems!
+        check(searchRequest.url!.path == "/api/search" && searchQuery.map(\.name) == ["track_name", "artist_name"],
+              "search sends title and artist only")
+        check(!searchRequest.url!.absoluteString.contains(special.id) && searchRequest.httpMethod == "GET" &&
+              searchRequest.value(forHTTPHeaderField: "Authorization") == nil, "search is the same read-only request")
+        check(LRCLIBProvider.looseMetadata("Cloud Lights (Live)") == LRCLIBProvider.looseMetadata("cloud  lights - LIVE"),
+              "punctuation around a version label ignored")
+        check(LRCLIBProvider.looseMetadata("A & B") == LRCLIBProvider.looseMetadata("A, B"), "artist separators ignored")
+        check(LRCLIBProvider.looseMetadata("Cloud Lights (Live)") != LRCLIBProvider.looseMetadata("Cloud Lights"),
+              "the version label itself still counts")
+        check(LRCLIBProvider.looseMetadata("Beyoncé") != LRCLIBProvider.looseMetadata("Beyonce") &&
+              LRCLIBProvider.looseMetadata("音乐！") == "音乐" && LRCLIBProvider.looseMetadata("?!") == "",
+              "letters of any script kept; diacritics retained")
+        func found(_ changes: [[String: Any]], status: Int = 200, otherwise: LyricsFetchOutcome = .notFound,
+                   raw: Data? = nil) throws -> LyricsFetchOutcome {
+            let records = changes.map { base.merging($0) { _, replacement in replacement } }
+            let response = HTTPURLResponse(url: LRCLIBProvider.searchEndpoint, statusCode: status,
+                                           httpVersion: "HTTP/1.1", headerFields: nil)!
+            return try LRCLIBProvider.searchOutcome(
+                for: LyricsHTTPResponse(data: try raw ?? JSONSerialization.data(withJSONObject: records), response: response),
+                track: track, otherwise: otherwise)
+        }
+        let other = "[00:01.00]Another release"
+        let otherAlbum = try found([["id": 8, "albumName": "Evening Sessions - Single", "syncedLyrics": other]])
+        check(otherAlbum == .found(LyricsMatch(lrc: other, providerID: 8)), "another release of the same song accepted")
+        let punctuation = try found([["id": 9, "trackName": "Cloud Lights - Live", "artistName": "THE EXAMPLE",
+                                      "albumName": NSNull(), "syncedLyrics": other]])
+        check(punctuation == .found(LyricsMatch(lrc: other, providerID: 9)), "title punctuation and missing album tolerated")
+        for changes: [String: Any] in [
+            ["trackName": "Cloud Lights"], ["trackName": "Cloud Lights (Remastered)"], ["artistName": "Other Artist"],
+            ["artistName": "The Example feat. Guest"], ["duration": track.duration + 2.001], ["duration": NSNull()],
+            ["id": 0], ["trackName": NSNull()], ["instrumental": true], ["syncedLyrics": NSNull()],
+            ["syncedLyrics": "Untimed test lyrics"], ["syncedLyrics": "[09:00]Wrong duration"]
+        ] {
+            let kept = try found([changes], otherwise: .rejected)
+            check(kept == .rejected, "a different song, version or untimed record keeps the exact outcome")
+        }
+        let ranked = try found([
+            ["id": 30, "albumName": "Other", "duration": track.duration + 1.5, "syncedLyrics": "[00:01.00]Far"],
+            ["id": 31, "albumName": "Other", "duration": track.duration + 0.5, "syncedLyrics": "[00:01.00]Near"],
+            ["id": 32, "albumName": "evening sessions!", "duration": track.duration + 2, "syncedLyrics": "[00:01.00]Album"],
+            ["id": 33, "trackName": "Something Else", "syncedLyrics": "[00:01.00]Wrong"]
+        ])
+        check(ranked == .found(LyricsMatch(lrc: "[00:01.00]Album", providerID: 32)), "same album preferred")
+        let nearest = try found([
+            ["id": 41, "albumName": "Other", "duration": track.duration + 1.5, "syncedLyrics": "[00:01.00]Far"],
+            ["id": 40, "albumName": "Other", "duration": track.duration - 0.5, "syncedLyrics": "[00:01.00]Near"],
+            ["id": 39, "albumName": "Third", "duration": track.duration + 0.5, "syncedLyrics": "[00:01.00]Tie"]
+        ])
+        check(nearest == .found(LyricsMatch(lrc: "[00:01.00]Tie", providerID: 39)), "then nearest duration, then lowest ID")
+        let lossy = try found([], raw: Data("[{\"id\":\"bad\"},\(String(data: try JSONSerialization.data(withJSONObject: base.merging(["albumName": "Other"]) { _, new in new }), encoding: .utf8)!)]".utf8))
+        check(lossy == exact, "a malformed record does not hide the others")
+        let empty = try found([], otherwise: .noTimedLyrics)
+        let absent = try found([], status: 404, otherwise: .rejected)
+        check(empty == .noTimedLyrics && absent == .rejected, "no candidates keeps the exact outcome")
+        fails(.invalidResponse) { _ = try found([], raw: Data("{}".utf8)) }
+        fails(.rateLimited(retryAfter: 60)) { _ = try found([], status: 429) }
+        fails(.http(status: 500, retryAfter: nil)) { _ = try found([], status: 500) }
+        fails(.invalidResponse) {
+            _ = try LRCLIBProvider.searchOutcome(for: payload(), track: track, otherwise: .notFound)
+        }
+        check(LRCLIBProvider.searchesAfter(.notFound) && LRCLIBProvider.searchesAfter(.rejected) &&
+              LRCLIBProvider.searchesAfter(.noTimedLyrics) && !LRCLIBProvider.searchesAfter(.instrumental) &&
+              !LRCLIBProvider.searchesAfter(exact), "only a miss searches")
+
+        // Two-step fetch through an injected transport.
+        final class ScriptedTransport: LyricsHTTPTransport {
+            var replies: [Result<LyricsHTTPResponse, Error>]
+            var requests: [URLRequest] = []
+            var limits: [Int] = []
+            var tokens: [FakeLyricsRequest] = []
+            var pending: ((Result<LyricsHTTPResponse, Error>) -> Void)?
+            var repeats = 1
+            init(_ replies: [Result<LyricsHTTPResponse, Error>]) { self.replies = replies }
+            func send(_ request: URLRequest, maximumResponseBytes: Int,
+                      completion: @escaping (Result<LyricsHTTPResponse, Error>) -> Void) -> LyricsRequest {
+                requests.append(request); limits.append(maximumResponseBytes)
+                let token = FakeLyricsRequest(); tokens.append(token)
+                if replies.isEmpty { pending = completion }
+                else { let reply = replies.removeFirst(); for _ in 0..<repeats { completion(reply) } }
+                return token
+            }
+        }
+        func searchPayload(_ records: [[String: Any]], status: Int = 200) throws -> LyricsHTTPResponse {
+            LyricsHTTPResponse(data: try JSONSerialization.data(withJSONObject: records.map { base.merging($0) { _, new in new } }),
+                response: HTTPURLResponse(url: LRCLIBProvider.searchEndpoint, statusCode: status, httpVersion: "HTTP/1.1", headerFields: nil)!)
+        }
+        func run(_ scripted: ScriptedTransport) -> Result<LyricsFetchOutcome, Error>? {
+            var result: Result<LyricsFetchOutcome, Error>?
+            var count = 0
+            LRCLIBProvider(transport: scripted, callbackQueue: callbackQueue).fetch(for: track) { result = $0; count += 1 }
+            callbackQueue.sync {}
+            precondition(count <= 1, "completion delivered more than once")
+            return result
+        }
+        let single = [["id": 8, "albumName": "Evening Sessions - Single", "syncedLyrics": other]]
+        for first in [try payload(status: 404), try payload(["albumName": "Wrong album"]), try payload(["syncedLyrics": NSNull()])] {
+            let scripted = ScriptedTransport([.success(first), .success(try searchPayload(single))])
+            scripted.repeats = 2
+            let result = run(scripted)
+            check((try? result?.get()) == otherAlbum, "a miss falls back to the search result")
+            check(scripted.requests.map { $0.url!.path } == ["/api/get", "/api/search"] &&
+                  scripted.limits == [LRCLIBProvider.maximumResponseBytes, LRCLIBProvider.maximumSearchResponseBytes],
+                  "exactly one search, even if the transport completes twice")
+        }
+        let instrumentalOnly = ScriptedTransport([.success(try payload(["instrumental": true, "syncedLyrics": NSNull()]))])
+        check((try? run(instrumentalOnly)?.get()) == .instrumental && instrumentalOnly.requests.count == 1, "an instrumental does not search")
+        let nothing = ScriptedTransport([.success(try payload(status: 404)), .success(try searchPayload([]))])
+        check((try? run(nothing)?.get()) == .notFound, "an empty search stays not found")
+        let oversized = ScriptedTransport([.success(try payload(["albumName": "Wrong album"])), .failure(LRCLIBError.responseTooLarge)])
+        check((try? run(oversized)?.get()) == .rejected, "an oversized search keeps the exact outcome")
+        let limited = ScriptedTransport([.success(try payload(status: 404)), .success(try searchPayload([], status: 429))])
+        if case .failure(let error)? = run(limited) { check(error as? LRCLIBError == .rateLimited(retryAfter: 60), "search rate limit reported") }
+        else { preconditionFailure("search rate limit hidden") }
+        let offline = ScriptedTransport([.success(try payload(status: 404)), .failure(URLError(.timedOut))])
+        if case .failure(let error)? = run(offline) { check((error as? URLError)?.code == .timedOut, "search transport error reported") }
+        else { preconditionFailure("search transport error hidden") }
+        let slow = ScriptedTransport([.success(try payload(status: 404))])
+        var late = 0
+        let slowFetch = LRCLIBProvider(transport: slow, callbackQueue: callbackQueue).fetch(for: track) { _ in late += 1 }
+        check(slow.requests.count == 2 && slow.pending != nil, "search in flight")
+        slowFetch.cancel()
+        check(slow.tokens[1].cancelled, "cancellation reaches the search request")
+        slow.pending?(.success(try searchPayload(single)))
+        callbackQueue.sync {}
+        check(late == 0, "late cancelled search ignored")
 
         // Real URLSession delegate path, entirely intercepted by URLProtocol.
         let transport = LRCLIBURLSessionTransport(protocolClasses: [StubLyricsURLProtocol.self])
