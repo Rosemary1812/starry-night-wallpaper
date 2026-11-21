@@ -2,13 +2,11 @@
 
 # StarryNight
 
-本实验分支增加《呐喊》、德洛内《圆形构图》和康定斯基《色彩习作：同心圆方格》，共 15 幅。新作品使用 ⌥⌘3、⌥⌘5、⌥⌘6，抽象画使用 RGB 独立运动区域。下方十二幅合集媒体仍是 v0.3.0 的录制。实验素材、动效取舍和验证记录见 [实验记录](docs/new-art-movements.md)。
-
 [English](README.md) · [下载应用](https://github.com/Rosemary1812/starry-night-wallpaper/releases) · [画作来源](THIRD-PARTY-NOTICES.md)
 
 让画作成为 Mac 上的动态壁纸。StarryNight 用原生画廊展示作品，再通过 Metal 渲染动效：云层沿着笔触流动，水面与倒影起伏，前景主体保持静止。
 
-当前源码包含 **15 幅画作**、无限循环滚动的画廊、每幅画的实时动态预览，以及取自《星空》的黑白应用图标。界面支持简体中文、繁體中文和 English。
+应用包含 **15 幅画作**、无限循环滚动的画廊、每幅画的实时动态预览，以及取自《星空》的黑白应用图标。界面支持简体中文、繁體中文和 English。
 
 ![当前 Metal 渲染器中的《星空》动态壁纸](docs/media/starry-night-preview.gif)
 
@@ -16,9 +14,9 @@
 
 向任意方向滚动或拖动，都可以继续浏览，不会停在第一幅或最后一幅。点击缩略图、左右箭头，或按键盘方向键切换画作。选定画作后，实时动态预览开始播放；旁边的画作保持静态。
 
-![十二幅画作的当前动态壁纸循环](docs/media/painting-collection.gif)
+![v0.3.0 中十二幅画作的动态壁纸循环](docs/media/painting-collection.gif)
 
-上面的 GIF 使用默认速度与强度，展示完整的 24 秒循环。帧画面直接来自当前应用的 Metal 渲染器，README 预览降采样为 4 fps，实际壁纸视频为 30 fps。这些是渲染器画面，不是 macOS 锁屏播放录屏。
+合集 GIF 展示 v0.3.0 中的十二幅画，不包含后来加入的三幅。上面的 GIF 使用默认速度与强度，展示完整的 24 秒循环。帧画面直接来自当前应用的 Metal 渲染器，README 预览降采样为 4 fps，实际壁纸视频为 30 fps。这些是渲染器画面，不是 macOS 锁屏播放录屏。
 
 | 画作 | 作者 · 年代 | 动效与静止主体 | 快捷键 |
 | --- | --- | --- | --- |
@@ -34,6 +32,9 @@
 | 普维尔悬崖漫步 | 克劳德·莫奈 · 1882 | 云层、露出的海面与草叶分区流动；人物、阳伞、小路与崖壁静止。 | ⌘0 |
 | 维尔纳夫拉加伦的桥 | 阿尔弗雷德·西斯莱 · 1872 | 局部河流与倒影流动；桥梁、船只、建筑与人物静止。 | ⌥⌘1 |
 | 国会大厦，日落 | 克劳德·莫奈 · 1903 | 水面短横笔触微动；建筑、船、天空与签名静止。 | ⌥⌘2 |
+| 呐喊 | 爱德华·蒙克 · 1893 | 天空色带流动；人物、桥梁与峡湾静止。 | ⌥⌘3 |
+| 圆形构图 | 罗伯特·德洛内 · 1930 | 三组色环回旋；画面外围静止。 | ⌥⌘5 |
+| 色彩习作：同心圆方格 | 瓦西里·康定斯基 · 1913 | 圆环错相回旋；方格边界静止。 | ⌥⌘6 |
 
 每幅画都有独立的流场和主体遮罩。《麦草堆》只改变天空局部亮度，不移动画面几何，因此动效比水波和云层更轻微。
 
@@ -66,7 +67,7 @@
 2. 解压，将 `Starry Night.app` 移入“应用程序”。
 3. 打开应用。如果 macOS 阻止打开，在 Finder 中按住 Control 点击应用，再选择“打开”。
 
-发布包附有 SHA-256 校验文件。[v0.3.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.3.0) 包含本页展示的十二幅画画廊。
+发布包附有 SHA-256 校验文件。[v0.4.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.4.0) 包含全部 15 幅画作和桌面歌词。
 
 这是使用 macOS 私有 API 的实验性扩展。构建使用 ad hoc 签名，未经过公证，也不面向 Mac App Store。后续 macOS 更新可能影响扩展兼容性。
 
@@ -114,7 +115,7 @@ mkdir -p assets
 
 将可合法使用的《星空》复制图放到 `assets/starrynight.jpg`。可以使用 [Wikimedia Commons 上的公共领域复制图](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg)，下载缩小版本即可，不必使用体积很大的原始文件。
 
-下载另外十一幅画作：
+下载另外十四幅画作：
 
 ```sh
 zsh scripts/fetch-artworks.sh
@@ -169,7 +170,7 @@ mkdir -p dist
 STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=15 zsh scripts/verify-gallery.sh
 ```
 
-脚本重新构建控制面板，检查本地化、画廊运动断言与 AppKit 布局，并验证十二幅画的 Metal 循环首尾、运动与主体保护采样点。证据保存在 `dist/gallery-evidence/` 与 `dist/evidence/`。采样点检查不能证明每个主体轮廓像素都固定不动。
+脚本重新构建控制面板，检查本地化、画廊运动断言与 AppKit 布局，并验证 15 幅画的 Metal 循环首尾、运动与主体保护采样点。证据保存在 `dist/gallery-evidence/` 与 `dist/evidence/`。采样点检查不能证明每个主体轮廓像素都固定不动。
 
 检查可见窗口中的实时预览，以及最后一幅与第一幅之间的循环切换：
 
@@ -213,7 +214,7 @@ zsh scripts/record-readme-media.sh
 
 ## 桌面歌词
 
-歌词分支提供 Apple Music 桌面歌词：显式开启后从 LRCLIB 自动查找严格匹配的录音版本，
+应用提供 Apple Music 桌面歌词：显式开启后从 LRCLIB 自动查找匹配的录音版本。精确查找失败时，会按歌名和歌手搜索并检查候选结果。
 歌词及每曲偏移保存在本地，离线可读，手动导入 LRC 优先。联网选项默认关闭；开启前会说明
 外发的歌名、歌手、专辑与时长。显示层只绘制文字，不再绘制背景面板。
 详见[使用、隐私、匹配规则与验收边界](docs/automatic-lyrics.md)，以及

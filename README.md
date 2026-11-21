@@ -2,13 +2,11 @@
 
 # StarryNight
 
-This experimental branch adds The Scream, Circular Forms, and Color Study: Squares with Concentric Circles, for 15 paintings. Select them with Option-Command-3, 5 and 6. Abstract studies use independent RGB motion groups. The twelve-painting collection media below still depicts v0.3.0. See the [study notes](docs/new-art-movements.md) for sources, motion decisions, and verification.
-
 [简体中文](README.zh-CN.md) · [Download](https://github.com/Rosemary1812/starry-night-wallpaper/releases) · [Painting sources](THIRD-PARTY-NOTICES.md)
 
 Turn paintings into animated wallpapers on your Mac. StarryNight pairs a native gallery with a Metal renderer: clouds follow the brushwork, water and reflections ripple, and foreground subjects stay still.
 
-The current source has **15 paintings**, an infinitely scrolling gallery, live previews for every painting, and a black-and-white app icon adapted from *The Starry Night*. The interface supports English, Simplified Chinese, and Traditional Chinese.
+The app has **15 paintings**, an infinitely scrolling gallery, live previews for every painting, and a black-and-white app icon adapted from *The Starry Night*. The interface supports English, Simplified Chinese, and Traditional Chinese.
 
 ![The Starry Night, rendered by the current Metal engine](docs/media/starry-night-preview.gif)
 
@@ -16,9 +14,9 @@ The current source has **15 paintings**, an infinitely scrolling gallery, live p
 
 Scroll or drag in either direction without reaching an end. Select a thumbnail or use the arrow keys to move between paintings. Once a selection settles, its live preview starts; neighboring cards remain still.
 
-![All twelve paintings playing their current wallpaper loops](docs/media/painting-collection.gif)
+![Twelve paintings from the v0.3.0 collection](docs/media/painting-collection.gif)
 
-The GIFs above show complete 24-second loops at the default speed and intensity. They are captured from the production Metal renderer, reduced to 4 fps for the README. Wallpaper videos render at 30 fps. These are renderer captures, not recordings of macOS lock-screen playback.
+The collection GIF shows the twelve paintings in v0.3.0; the three newer paintings are not shown. The GIFs above show complete 24-second loops at the default speed and intensity. They are captured from the production Metal renderer, reduced to 4 fps for the README. Wallpaper videos render at 30 fps. These are renderer captures, not recordings of macOS lock-screen playback.
 
 | Painting | Artist · year | Motion and protected subjects | Shortcut |
 | --- | --- | --- | --- |
@@ -34,6 +32,9 @@ The GIFs above show complete 24-second loops at the default speed and intensity.
 | Cliff Walk at Pourville | Claude Monet · 1882 | Clouds, exposed sea, and grass move separately; figures, parasol, paths, and cliffs stay still. | ⌘0 |
 | The Bridge at Villeneuve-la-Garenne | Alfred Sisley · 1872 | River currents move; bridge, boats, buildings, and people stay still. | ⌥⌘1 |
 | The Houses of Parliament, Sunset | Claude Monet · 1903 | Short reflection strokes move; architecture, boats, sky, and signature stay still. | ⌥⌘2 |
+| The Scream | Edvard Munch · 1893 | Sky bands ripple; figures, bridge, and fjord stay still. | ⌥⌘3 |
+| Circular Forms | Robert Delaunay · 1930 | Three color groups turn; the outer composition stays still. | ⌥⌘5 |
+| Color Study: Squares with Concentric Circles | Wassily Kandinsky · 1913 | Circles turn in a staggered rhythm; the grid stays still. | ⌥⌘6 |
 
 Each painting has its own motion field and subject mask. *Stacks of Wheat* uses a local brightness change rather than displacement, so its motion is intentionally quieter.
 
@@ -66,7 +67,7 @@ StarryNight requires **macOS 26 and an Apple Silicon Mac**.
 2. Extract it and move `Starry Night.app` into Applications.
 3. Open the app. If macOS blocks it, Control-click it in Finder and choose **Open**.
 
-Release archives include a SHA-256 checksum file. [v0.3.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.3.0) includes the twelve-painting gallery shown on this page.
+Release archives include a SHA-256 checksum file. [v0.4.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.4.0) includes all 15 paintings and desktop lyrics.
 
 This is an experimental extension that uses private macOS APIs. Builds use an ad hoc signature, are not notarized, and are not intended for the Mac App Store. macOS updates may affect extension compatibility.
 
@@ -114,7 +115,7 @@ Skip `xcode-select --install` if the tools are already installed.
 
 Put a legally usable reproduction of *The Starry Night* at `assets/starrynight.jpg`. A [public-domain reproduction on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg) is one option. Download a reduced-size version rather than the very large original file.
 
-Download the other eleven images:
+Download the other fourteen images:
 
 ```sh
 zsh scripts/fetch-artworks.sh
@@ -169,7 +170,7 @@ With the source assets available, run:
 STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=15 zsh scripts/verify-gallery.sh
 ```
 
-This rebuilds the control panel, checks localization, runs the carousel's motion assertions, captures AppKit layouts, and checks native Metal loop endpoints, movement, and protected-subject sample points for all twelve paintings. Evidence goes into `dist/gallery-evidence/` and `dist/evidence/`. Protected-point checks do not prove that every silhouette pixel is fixed.
+This rebuilds the control panel, checks localization, runs the carousel's motion assertions, captures AppKit layouts, and checks native Metal loop endpoints, movement, and protected-subject sample points for all 15 paintings. Evidence goes into `dist/gallery-evidence/` and `dist/evidence/`. Protected-point checks do not prove that every silhouette pixel is fixed.
 
 To check visible live previews and the wrap between the last and first paintings:
 
@@ -213,9 +214,9 @@ Painting reproductions have their own terms. In particular, the *Waterloo Bridge
 
 ## Desktop lyrics
 
-The lyrics branch adds an opt-in Apple Music companion overlay with automatic,
+The app includes an opt-in Apple Music companion overlay with automatic,
 strict recording matching through LRCLIB, offline lyric/offset storage and manual
-LRC fallback. Automatic network lookup is off until you enable its explicit menu
+LRC fallback. If an exact lookup misses, the app searches by title and artist and checks candidates for a matching recording. Automatic network lookup is off until you enable its explicit menu
 setting. The overlay paints only text, not a background panel. See
 [setup, privacy, matching and verification](docs/automatic-lyrics.md), or open the
 [offline style comparison](docs/lyrics-style-preview.html). The latter is a web
