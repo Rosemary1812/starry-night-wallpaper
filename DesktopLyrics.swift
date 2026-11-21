@@ -169,11 +169,12 @@ private final class LyricsView: NSView {
         guard abs(delta) > 0.0005 else { return }
         let animation: CABasicAnimation
         if spring {
-            // Soft, nearly critically damped settle (about 0.6 s, 10% bounce).
+            // Damping ratio 0.76: 90% of the way in 0.3 s, then about 2% overshoot,
+            // as measured on Apple Music's full-window lyrics.
             let motion = CASpringAnimation(keyPath: keyPath)
             motion.mass = 1
             motion.stiffness = 110
-            motion.damping = 18.8
+            motion.damping = 16
             motion.duration = motion.settlingDuration
             animation = motion
         } else {
