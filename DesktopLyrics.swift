@@ -16,120 +16,300 @@ private final class LyricsFixtureBackgroundView: NSView {
     override func draw(_ dirtyRect: NSRect) { color.setFill(); dirtyRect.fill() }
 }
 
+private struct LyricPose: Equatable {
+    var y: CGFloat = 0
+    var scale: CGFloat = 1
+    var opacity: Float = 0
+}
+
+// One lyric row. Text is rasterized once at the current-line size; becoming a
+// neighbor only changes transform and opacity, so rows never reflow mid-motion.
+private final class LyricRow: NSObject, CALayerDelegate {
+    let text: String
+    let layer = CALayer()
+    var string = NSAttributedString()
+    var pose = LyricPose()
+
+    init(text: String) {
+        self.text = text
+        super.init()
+        layer.delegate = self
+        layer.isOpaque = false
+        layer.needsDisplayOnBoundsChange = true
+    }
+
+    func draw(_ layer: CALayer, in context: CGContext) {
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        string.draw(with: layer.bounds.insetBy(dx: 3, dy: 4),
+                    options: [.usesLineFragmentOrigin, .usesFontLeading, .truncatesLastVisibleLine])
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    // Every change is driven by the explicit animations in LyricsView.
+    func action(for layer: CALayer, forKey event: String) -> CAAction? { NSNull() }
+}
+
 private final class LyricsView: NSView {
-    private var labels: [NSTextField] = []
+    private static let neighborScale: CGFloat = 0.6
+    private static let neighborOpacity: Float = 0.52
+    private static let stagger: CFTimeInterval = 0.045
+
+    // Keyed by lyric row index, so a row keeps its layer while it travels.
+    private var lines: [Int: LyricRow] = [:]
     private var rendered: [String] = []
-    var displayedLines: [String] { labels.map(\.stringValue) }
+    private var anchor = 0
+    private var token = ""
+    private var styledSize = NSSize.zero
+    private var animationSerial = 0
+    // Tells a pending dismissal that newer content replaced it.
+    private var epoch = 0
+    private var dismissing = false
+    var displayedLines: [String] { rendered }
     var largeText = false {
         didSet {
             guard largeText != oldValue else { return }
-            styleAndLayoutLines()
+            restyle()
         }
     }
 
     // The wallpaper must remain untouched between glyphs. Never paint a panel,
-    // material, gradient, border or view-level shadow behind these labels.
+    // material, gradient, border or view-level shadow behind these rows.
     override var isOpaque: Bool { false }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
+        let root = CALayer()
+        root.isOpaque = false
+        root.backgroundColor = NSColor.clear.cgColor
+        layer = root
         wantsLayer = true
-        layer?.backgroundColor = NSColor.clear.cgColor
-        layer?.isOpaque = false
-        for _ in 0..<3 {
-            let label = NSTextField(labelWithString: "")
-            label.alignment = .center
-            label.isBordered = false
-            label.drawsBackground = false
-            label.backgroundColor = .clear
-            label.isEditable = false
-            label.isSelectable = false
-            label.focusRingType = .none
-            label.maximumNumberOfLines = 2
-            label.lineBreakMode = .byTruncatingTail
-            label.cell?.wraps = true
-            label.cell?.usesSingleLineMode = false
-            labels.append(label)
-            addSubview(label)
-        }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func layout() {
         super.layout()
-        styleAndLayoutLines()
+        guard styledSize != bounds.size else { return }
+        restyle()
     }
 
-    private func styleAndLayoutLines() {
-        guard labels.count == 3 else { return }
-        let textWidth = max(1, min(740, bounds.width - 56))
-        var heights: [CGFloat] = []
-        for (index, label) in labels.enumerated() {
-            let current = index == 1
-            let size: CGFloat = current ? (largeText ? 38 : 30) : (largeText ? 23 : 18)
-            // System typography gives Latin and Chinese their native, compatible
-            // font fallbacks instead of substituting an unrelated display face.
-            let font = NSFont.systemFont(ofSize: size, weight: current ? .medium : .regular)
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.alignment = .center
-            paragraph.lineBreakMode = .byWordWrapping
-            paragraph.lineSpacing = current ? 5 : 3
-            let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(current ? 0.68 : 0.55)
-            shadow.shadowBlurRadius = current ? 3 : 2
-            shadow.shadowOffset = NSSize(width: 0, height: -1)
-            let string = NSAttributedString(string: label.stringValue, attributes: [
-                .font: font,
-                .foregroundColor: NSColor(white: 0.98, alpha: 1),
-                .kern: current ? 0.45 : 0.3,
-                .paragraphStyle: paragraph,
-                // Attribute-level shadow follows only the glyphs, not a view.
-                .shadow: shadow
-            ])
-            label.attributedStringValue = string
-            let measured = string.boundingRect(
-                with: NSSize(width: max(1, textWidth - 6), height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin, .usesFontLeading])
-            let oneLine = ceil(font.ascender - font.descender + font.leading)
-            // Reserve two lines at most, with room for glyph shadows. Long CJK
-            // text wraps naturally; the field truncates beyond its two-line cap.
-            heights.append(min(ceil(measured.height), oneLine * 2 + paragraph.lineSpacing) + 8)
-        }
-        let gap: CGFloat = largeText ? 16 : 18
-        let centerHeight = heights[1]
-        let centerBottom = bounds.midY - centerHeight / 2
-        let origins = [centerBottom + centerHeight + gap,
-                       centerBottom,
-                       centerBottom - gap - heights[2]]
-        for (index, label) in labels.enumerated() {
-            label.frame = NSRect(x: (bounds.width - textWidth) / 2, y: origins[index],
-                                 width: textWidth, height: heights[index])
-        }
+    override func viewDidChangeBackingProperties() {
+        super.viewDidChangeBackingProperties()
+        restyle()
     }
 
-    func render(_ lines: [String], animated: Bool = true) {
-        // Keep the display safe for empty and partially populated timelines.
-        let normalized = (0..<3).map { lines.indices.contains($0) ? lines[$0] : "" }
-        guard rendered != normalized else { return }
-        rendered = normalized
-        for (index, label) in labels.enumerated() {
-            label.stringValue = normalized[index]
+    private var textWidth: CGFloat { max(1, min(740, bounds.width - 56)) }
+    private var font: NSFont {
+        // System typography gives Latin and Chinese their native, compatible
+        // font fallbacks instead of substituting an unrelated display face.
+        NSFont.systemFont(ofSize: largeText ? 38 : 30, weight: .medium)
+    }
+    private var rowHeight: CGFloat { ceil(font.ascender - font.descender + font.leading) }
+    private var gap: CGFloat { largeText ? 16 : 18 }
+
+    private func style(_ line: LyricRow) {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.lineBreakMode = .byWordWrapping
+        paragraph.lineSpacing = 5
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.68)
+        shadow.shadowBlurRadius = 3
+        shadow.shadowOffset = NSSize(width: 0, height: -1)
+        line.string = NSAttributedString(string: line.text, attributes: [
+            .font: font,
+            .foregroundColor: NSColor(white: 0.98, alpha: 1),
+            .kern: 0.45,
+            .paragraphStyle: paragraph,
+            // Attribute-level shadow follows only the glyphs, not a view.
+            .shadow: shadow
+        ])
+        let measured = line.string.boundingRect(
+            with: NSSize(width: max(1, textWidth - 6), height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading])
+        // Reserve two rows at most, with room for glyph shadows. Long CJK text
+        // wraps naturally and is truncated beyond the two-row cap.
+        let height = min(ceil(measured.height), rowHeight * 2 + paragraph.lineSpacing) + 8
+        line.layer.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+        line.layer.bounds = CGRect(x: 0, y: 0, width: textWidth, height: height)
+        line.layer.setNeedsDisplay()
+    }
+
+    private func restyle() {
+        styledSize = bounds.size
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for line in lines.values {
+            line.layer.removeAllAnimations()
+            style(line)
         }
-        styleAndLayoutLines()
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        for (index, label) in labels.enumerated() {
-            let target: CGFloat = index == 1 ? 1 : 0.52
-            if reduceMotion || !animated {
-                label.alphaValue = target
-            } else {
-                // A short opacity settle avoids sliding text or a flashing panel.
-                label.alphaValue = target * 0.6
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.20
-                    label.animator().alphaValue = target
-                }
+        prune()
+        settle(shift: 0, entering: [], animated: false)
+        CATransaction.commit()
+    }
+
+    private func height(_ key: Int) -> CGFloat { lines[key]?.layer.bounds.height ?? rowHeight + 8 }
+
+    private func pose(slot: Int, height: CGFloat) -> LyricPose {
+        guard slot != 0 else { return LyricPose(y: bounds.midY, scale: 1, opacity: 1) }
+        let scale = Self.neighborScale
+        let side: CGFloat = slot < 0 ? 1 : -1
+        let neighbor = self.height(anchor + (slot < 0 ? -1 : 1)) * scale
+        // Rows past the neighbors wait transparently, one pitch further out.
+        var edge = self.height(anchor) / 2 + gap
+        if abs(slot) > 1 {
+            edge += neighbor + gap * scale + CGFloat(abs(slot) - 2) * (rowHeight + 8 + gap) * scale
+        }
+        return LyricPose(y: bounds.midY + side * (edge + height * scale / 2), scale: scale,
+                         opacity: abs(slot) == 1 ? Self.neighborOpacity : 0)
+    }
+
+    private func animate(_ layer: CALayer, _ keyPath: String, from delta: CGFloat, delay: CFTimeInterval,
+                         spring: Bool, duration: CFTimeInterval = 0.35) {
+        guard abs(delta) > 0.0005 else { return }
+        let animation: CABasicAnimation
+        if spring {
+            // Soft, nearly critically damped settle (about 0.6 s, 10% bounce).
+            let motion = CASpringAnimation(keyPath: keyPath)
+            motion.mass = 1
+            motion.stiffness = 110
+            motion.damping = 18.8
+            motion.duration = motion.settlingDuration
+            animation = motion
+        } else {
+            animation = CABasicAnimation(keyPath: keyPath)
+            animation.duration = duration
+            animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        }
+        // Additive deltas compose, so a new line change can interrupt one that
+        // is still in flight without the rows jumping.
+        animation.isAdditive = true
+        animation.fromValue = delta
+        animation.toValue = 0
+        animation.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) + delay
+        animation.fillMode = .backwards
+        // Unique keys keep the animations independent and visible to prune().
+        animationSerial &+= 1
+        layer.add(animation, forKey: "lyric.\(animationSerial)")
+    }
+
+    private func settle(shift: Int, entering: Set<Int>, animated: Bool) {
+        for (key, line) in lines {
+            let slot = key - anchor
+            let target = pose(slot: slot, height: line.layer.bounds.height)
+            var origin = line.pose
+            if entering.contains(key) {
+                origin = pose(slot: slot + shift, height: line.layer.bounds.height)
+                if shift == 0 { origin.opacity = 0 }
             }
+            // A row that has already left keeps its course until prune() drops
+            // it; retargeting it on every change would keep it alive for as
+            // long as lines arrive faster than the spring settles.
+            if animated, origin.opacity == 0, target.opacity == 0 { continue }
+            line.pose = target
+            line.layer.position = CGPoint(x: bounds.midX, y: target.y)
+            line.layer.transform = CATransform3DMakeScale(target.scale, target.scale, 1)
+            line.layer.opacity = target.opacity
+            guard animated else { continue }
+            // Rows follow each other in the direction of travel, like a wave.
+            let order = shift > 0 ? slot + 1 : shift < 0 ? 1 - slot : 0
+            let delay = Double(min(3, max(0, order))) * Self.stagger
+            animate(line.layer, "position.y", from: origin.y - target.y, delay: delay, spring: true)
+            animate(line.layer, "transform.scale.x", from: origin.scale - target.scale, delay: delay, spring: true)
+            animate(line.layer, "transform.scale.y", from: origin.scale - target.scale, delay: delay, spring: true)
+            animate(line.layer, "opacity", from: CGFloat(origin.opacity - target.opacity), delay: delay, spring: false)
         }
+    }
+
+    // Drop rows that have finished leaving; rows still in motion are kept.
+    private func prune() {
+        for (key, line) in lines where abs(key - anchor) > 1 && (line.layer.animationKeys() ?? []).isEmpty {
+            line.layer.removeFromSuperlayer()
+            lines[key] = nil
+        }
+    }
+
+    func clear() {
+        epoch += 1
+        dismissing = false
+        lines.values.forEach { $0.layer.removeFromSuperlayer() }
+        lines.removeAll()
+        rendered = []
+    }
+
+    /// Fades the rows out, then calls `hidden` unless new lyrics arrived first.
+    /// Safe to call repeatedly while there is nothing to show.
+    func dismiss(then hidden: @escaping () -> Void) {
+        guard !lines.isEmpty else {
+            if !dismissing { hidden() }
+            return
+        }
+        let leaving = Array(lines.values)
+        lines.removeAll()
+        rendered = []
+        dismissing = true
+        epoch += 1
+        let epoch = self.epoch
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        CATransaction.setCompletionBlock { [weak self] in
+            leaving.forEach { $0.layer.removeFromSuperlayer() }
+            guard let self, self.epoch == epoch else { return }
+            self.dismissing = false
+            hidden()
+        }
+        fade(leaving, animated: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        CATransaction.commit()
+    }
+
+    private func fade(_ leaving: [LyricRow], animated: Bool) {
+        for line in leaving {
+            let opacity = line.layer.opacity
+            line.layer.opacity = 0
+            if animated { animate(line.layer, "opacity", from: CGFloat(opacity), delay: 0, spring: false, duration: 0.2) }
+        }
+    }
+
+    /// `anchor` is the lyric row index of the middle line and `token` identifies
+    /// the lyrics it belongs to; together they tell a scroll from a replacement.
+    func render(_ texts: [String], anchor: Int = 0, token: String = "", animated: Bool = true) {
+        // Keep the display safe for empty and partially populated timelines.
+        let normalized = (0..<3).map { texts.indices.contains($0) ? texts[$0] : "" }
+        guard rendered != normalized || anchor != self.anchor || token != self.token else { return }
+        let wanted = [anchor - 1: normalized[0], anchor: normalized[1], anchor + 1: normalized[2]]
+        let shift = anchor - self.anchor
+        let scrolls = !rendered.isEmpty && token == self.token && abs(shift) <= 2 &&
+            wanted.allSatisfy { key, text in lines[key] == nil || lines[key]?.text == text }
+        let motion = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        rendered = normalized
+        self.anchor = anchor
+        self.token = token
+        epoch += 1
+        dismissing = false
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        var leaving: [LyricRow] = []
+        if !scrolls {
+            // A seek or new lyrics: dissolve instead of scrolling past many rows.
+            leaving = Array(lines.values)
+            lines.removeAll()
+        }
+        CATransaction.setCompletionBlock { [weak self] in
+            leaving.forEach { $0.layer.removeFromSuperlayer() }
+            self?.prune()
+        }
+        fade(leaving, animated: motion)
+        var entering: Set<Int> = []
+        for (key, text) in wanted where lines[key] == nil {
+            let line = LyricRow(text: text)
+            style(line)
+            layer?.addSublayer(line.layer)
+            lines[key] = line
+            entering.insert(key)
+        }
+        settle(shift: scrolls ? shift : 0, entering: entering, animated: motion)
+        CATransaction.commit()
     }
 }
 
@@ -159,6 +339,7 @@ final class DesktopLyricsController: NSObject {
     private var largeText = UserDefaults.standard.bool(forKey: "lyrics.largeText")
     private var offsets: [String: TimeInterval] = [:]
     private var sampledAt: TimeInterval = 0
+    private var shown: (identity: String, index: Int)?
     private var openPanel: NSOpenPanel?
 
 
@@ -488,14 +669,31 @@ final class DesktopLyricsController: NSObject {
         guard enabled, !sleeping else { return }
         guard case .track(let track, _, _) = timeline.state,
               let document = documents[track.lyricsIdentity], let position = timeline.position(at: ProcessInfo.processInfo.systemUptime) else {
-            windows.forEach { $0.orderOut(nil) }
+            hideWindows()
             return
         }
-        let index = document.index(at: position + (offsets[track.lyricsIdentity] ?? 0)) ?? -1
+        let identity = track.lyricsIdentity
+        var held: Int?
+        if case .track(_, _, true) = timeline.state, shown?.identity == identity { held = shown?.index }
+        let index = document.index(at: position + (offsets[identity] ?? 0), holding: held) ?? -1
+        shown = (identity, index)
         let text = [index - 1, index, index + 1].map { document.lines.indices.contains($0) ? document.lines[$0].text : "" }
         for window in windows {
-            (window.contentView as? LyricsView)?.render(text)
+            (window.contentView as? LyricsView)?.render(text, anchor: index, token: identity)
             if !window.isVisible { window.orderFrontRegardless() }
+        }
+    }
+
+    // Rows fade out before their window leaves, so a track change is not a
+    // cut; lyrics that arrive during the fade dissolve in over it.
+    private func hideWindows(animated: Bool = true) {
+        for window in windows {
+            guard animated, let view = window.contentView as? LyricsView else {
+                window.orderOut(nil)
+                (window.contentView as? LyricsView)?.clear()
+                continue
+            }
+            view.dismiss { [weak window] in window?.orderOut(nil) }
         }
     }
 
@@ -503,7 +701,7 @@ final class DesktopLyricsController: NSObject {
         sleeping = true
         generation += 1
         lyricsService.select(nil, enabled: false, automatic: automaticLookup)
-        windows.forEach { $0.orderOut(nil) }
+        hideWindows(animated: false)
     }
     @objc private func wake() {
         sleeping = false

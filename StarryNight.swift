@@ -1113,8 +1113,10 @@ if args.count>1 && args[1] != "--ui-check" && args[1] != "--lyrics-smoke" && arg
                 let bounds = selected.imageBounds
                 let px = (sourceX-bounds.minX)/bounds.width
                 let py = (sourceY-bounds.minY)/bounds.height
-                let x = Int((outputAspect > imageAspect ? px : (px-0.5)*imageAspect/outputAspect+0.5)*1280)
-                let y = Int((outputAspect > imageAspect ? (py-0.5)*outputAspect/imageAspect+0.5 : py)*1014)
+                let fx: CGFloat = outputAspect > imageAspect ? px : (px-0.5)*imageAspect/outputAspect+0.5
+                let fy: CGFloat = outputAspect > imageAspect ? (py-0.5)*outputAspect/imageAspect+0.5 : py
+                let x = Int(fx*1280)
+                let y = Int(fy*1014)
                 if x >= 0 && x < 1280 && y >= 0 && y < 1014 {
                     guard pixelDifference(first,original,x,y)==0 && pixelDifference(first,middle,x,y)==0 else {
                         throw failure("Protected subject moved at \(px),\(py)")

@@ -55,7 +55,7 @@ Music playback still uses the public Apple Events adapter, 250 ms polling and a 
 
 The previous view explicitly painted a black gradient panel. That paint path has been removed. The window remains clear, nonopaque, borderless, without a window shadow, click-through and unable to take key/main focus. Its view and labels have transparent backgrounds, no borders or material. Only the text glyphs have a small shadow.
 
-The current line uses system typography at 30 pt (38 pt in large mode); neighbors use 18/23 pt and 52% opacity. Text is centered, wraps to at most two rows and uses a short opacity transition rather than a sliding panel. Reduce Motion disables that transition.
+The current line uses system typography at 30 pt (38 pt in large mode); neighbors use 18/23 pt and 52% opacity. Text is centered and wraps to at most two rows. Each row is its own layer drawn once at the current-line size, so a line change only moves, scales and fades rows: they travel one row with a soft spring, 45 ms apart, and a change that interrupts one in flight continues from where the rows are. A seek dissolves instead of scrolling. When the track changes or lyrics become unavailable, the rows fade out over 0.2 s before the window leaves, and lyrics that load meanwhile fade in over them. A position recalibration that lands up to 0.2 s before the shown line keeps that line. Reduce Motion replaces all of this with an immediate change.
 
 Open `docs/lyrics-style-preview.html` for an offline visual before/after simulation with invented text. It is not an AppKit screenshot or proof of native desktop compositing, Spaces, hit testing, or wallpaper behavior.
 
