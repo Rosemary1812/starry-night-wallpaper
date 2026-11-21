@@ -214,6 +214,10 @@ Painting reproductions have their own terms. In particular, the *Waterloo Bridge
 
 ## Desktop lyrics
 
+![Desktop lyrics scrolling between lines](docs/media/desktop-lyrics.gif)
+
+Native lyrics view with invented text on a solid background for this recording. The desktop overlay itself has no background panel.
+
 The app includes an opt-in Apple Music companion overlay with automatic,
 strict recording matching through LRCLIB, offline lyric/offset storage and manual
 LRC fallback. If an exact lookup misses, the app searches by title and artist and checks candidates for a matching recording. Automatic network lookup is off until you enable its explicit menu

@@ -1,6 +1,6 @@
 # README media
 
-These GIFs were captured from the integrated source's production `Engine` and `Sky.metal`. They show native Metal output, not browser approximations or macOS desktop/lock-screen recordings.
+The painting GIFs were captured from the integrated source's production `Engine` and `Sky.metal`. They show native Metal output, not browser approximations or macOS desktop/lock-screen recordings.
 
 ## Recreate the GIFs
 
@@ -29,6 +29,10 @@ GIF encoding uses a fixed palette throughout each loop and no dithering to avoid
 | `painting-collection.gif` | 690 × 412 | All twelve paintings, in the app's order, with synchronized loop times. |
 
 The individual GIFs use up to 128 colors. The collection uses up to 64 colors to keep the download small. GIFs are reduced documentation previews; the app exports 30 fps H.264 video at higher resolution.
+
+## Desktop lyrics
+
+`desktop-lyrics.gif` is a screen recording of the native `LyricsView` with invented text. A temporary fixture advances the lines on a solid background; the actual overlay is transparent. The GIF does not demonstrate Music integration or wallpaper playback.
 
 ## Artwork attribution
 
