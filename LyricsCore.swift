@@ -43,6 +43,15 @@ struct LyricsDocument {
         }
         return low == 0 ? nil : low - 1
     }
+
+    /// Keeps the line already shown when a recalibrated position lands just
+    /// before its start, so playback never crosses the same boundary twice.
+    func index(at position: TimeInterval, holding shown: Int?, tolerance: TimeInterval = 0.2) -> Int? {
+        let index = self.index(at: position)
+        guard let shown, lines.indices.contains(shown), (index ?? -1) == shown - 1,
+              lines[shown].time - position <= tolerance else { return index }
+        return shown
+    }
 }
 
 struct MusicTrack: Equatable {
