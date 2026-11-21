@@ -61,6 +61,7 @@ private final class LyricsView: NSView {
     private var anchor = 0
     private var token = ""
     private var styledSize = NSSize.zero
+    private var animationSerial = 0
     var displayedLines: [String] { rendered }
     var largeText = false {
         didSet {
@@ -184,7 +185,9 @@ private final class LyricsView: NSView {
         animation.toValue = 0
         animation.beginTime = layer.convertTime(CACurrentMediaTime(), from: nil) + delay
         animation.fillMode = .backwards
-        layer.add(animation, forKey: nil)
+        // Unique keys keep the animations independent and visible to prune().
+        animationSerial &+= 1
+        layer.add(animation, forKey: "lyric.\(animationSerial)")
     }
 
     private func settle(shift: Int, entering: Set<Int>, animated: Bool) {
@@ -196,6 +199,10 @@ private final class LyricsView: NSView {
                 origin = pose(slot: slot + shift, height: line.layer.bounds.height)
                 if shift == 0 { origin.opacity = 0 }
             }
+            // A row that has already left keeps its course until prune() drops
+            // it; retargeting it on every change would keep it alive for as
+            // long as lines arrive faster than the spring settles.
+            if animated, origin.opacity == 0, target.opacity == 0 { continue }
             line.pose = target
             line.layer.position = CGPoint(x: bounds.midX, y: target.y)
             line.layer.transform = CATransform3DMakeScale(target.scale, target.scale, 1)
@@ -211,7 +218,7 @@ private final class LyricsView: NSView {
         }
     }
 
-    // Drop rows that have finished leaving; rows still fading are kept.
+    // Drop rows that have finished leaving; rows still in motion are kept.
     private func prune() {
         for (key, line) in lines where abs(key - anchor) > 1 && (line.layer.animationKeys() ?? []).isEmpty {
             line.layer.removeFromSuperlayer()
