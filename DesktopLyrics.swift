@@ -62,6 +62,9 @@ private final class LyricsView: NSView {
     private var token = ""
     private var styledSize = NSSize.zero
     private var animationSerial = 0
+    // Tells a pending dismissal that newer content replaced it.
+    private var epoch = 0
+    private var dismissing = false
     var displayedLines: [String] { rendered }
     var largeText = false {
         didSet {
@@ -227,10 +230,44 @@ private final class LyricsView: NSView {
     }
 
     func clear() {
-        guard !lines.isEmpty || !rendered.isEmpty else { return }
+        epoch += 1
+        dismissing = false
         lines.values.forEach { $0.layer.removeFromSuperlayer() }
         lines.removeAll()
         rendered = []
+    }
+
+    /// Fades the rows out, then calls `hidden` unless new lyrics arrived first.
+    /// Safe to call repeatedly while there is nothing to show.
+    func dismiss(then hidden: @escaping () -> Void) {
+        guard !lines.isEmpty else {
+            if !dismissing { hidden() }
+            return
+        }
+        let leaving = Array(lines.values)
+        lines.removeAll()
+        rendered = []
+        dismissing = true
+        epoch += 1
+        let epoch = self.epoch
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        CATransaction.setCompletionBlock { [weak self] in
+            leaving.forEach { $0.layer.removeFromSuperlayer() }
+            guard let self, self.epoch == epoch else { return }
+            self.dismissing = false
+            hidden()
+        }
+        fade(leaving, animated: !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        CATransaction.commit()
+    }
+
+    private func fade(_ leaving: [LyricRow], animated: Bool) {
+        for line in leaving {
+            let opacity = line.layer.opacity
+            line.layer.opacity = 0
+            if animated { animate(line.layer, "opacity", from: CGFloat(opacity), delay: 0, spring: false, duration: 0.2) }
+        }
     }
 
     /// `anchor` is the lyric row index of the middle line and `token` identifies
@@ -247,6 +284,8 @@ private final class LyricsView: NSView {
         rendered = normalized
         self.anchor = anchor
         self.token = token
+        epoch += 1
+        dismissing = false
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -260,11 +299,7 @@ private final class LyricsView: NSView {
             leaving.forEach { $0.layer.removeFromSuperlayer() }
             self?.prune()
         }
-        for line in leaving {
-            let opacity = line.layer.opacity
-            line.layer.opacity = 0
-            if motion { animate(line.layer, "opacity", from: CGFloat(opacity), delay: 0, spring: false, duration: 0.2) }
-        }
+        fade(leaving, animated: motion)
         var entering: Set<Int> = []
         for (key, text) in wanted where lines[key] == nil {
             let line = LyricRow(text: text)
@@ -649,11 +684,16 @@ final class DesktopLyricsController: NSObject {
         }
     }
 
-    // Hidden windows forget their rows, so the next lyrics fade in on their own.
-    private func hideWindows() {
+    // Rows fade out before their window leaves, so a track change is not a
+    // cut; lyrics that arrive during the fade dissolve in over it.
+    private func hideWindows(animated: Bool = true) {
         for window in windows {
-            window.orderOut(nil)
-            (window.contentView as? LyricsView)?.clear()
+            guard animated, let view = window.contentView as? LyricsView else {
+                window.orderOut(nil)
+                (window.contentView as? LyricsView)?.clear()
+                continue
+            }
+            view.dismiss { [weak window] in window?.orderOut(nil) }
         }
     }
 
@@ -661,7 +701,7 @@ final class DesktopLyricsController: NSObject {
         sleeping = true
         generation += 1
         lyricsService.select(nil, enabled: false, automatic: automaticLookup)
-        hideWindows()
+        hideWindows(animated: false)
     }
     @objc private func wake() {
         sleeping = false
