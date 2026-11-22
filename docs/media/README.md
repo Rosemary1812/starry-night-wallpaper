@@ -32,7 +32,7 @@ The individual GIFs use up to 128 colors. The collection uses up to 64 colors to
 
 ## Desktop lyrics
 
-`desktop-lyrics.gif` is a screen recording of the native `LyricsView` with invented text. A temporary fixture advances the lines on a solid background; the actual overlay is transparent. The GIF does not demonstrate Music integration or wallpaper playback.
+`desktop-lyrics.gif` (800 × 400, 10 fps, 5.2 s) is a native macOS screen recording of the production transparent `LyricsView` overlay composited over live Metal playback of *Starry Night over the Rhône* (`LiveView` / `Engine`). A temporary fixture advances original sample lines to show the spring-scroll motion and transparency; the GIF does not demonstrate live Apple Music playback or system wallpaper extension playback.
 
 ## Artwork attribution
 

@@ -1,227 +1,217 @@
-![StarryNight. Paintings in motion.](docs/media/readme-header.png)
+<p align="center">
+  <img src="docs/media/readme-header.png" alt="StarryNight — Paintings in motion" width="100%" />
+</p>
 
-# StarryNight
+<p align="center">
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="https://github.com/Rosemary1812/starry-night-wallpaper/releases">Download</a> ·
+  <a href="THIRD-PARTY-NOTICES.md">Painting Sources</a> ·
+  macOS 26 · Apple Silicon
+</p>
 
-[简体中文](README.zh-CN.md) · [Download](https://github.com/Rosemary1812/starry-night-wallpaper/releases) · [Painting sources](THIRD-PARTY-NOTICES.md)
+<p align="center">
+  <strong>Living paintings for your Mac desktop.</strong><br />
+  Rendered natively in Metal so skies drift along the brushwork and water ripples while figures and architecture stay still—paired with a minimal Apple Music lyrics overlay.
+</p>
 
-Turn paintings into animated wallpapers on your Mac. StarryNight pairs a native gallery with a Metal renderer: clouds follow the brushwork, water and reflections ripple, and foreground subjects stay still.
+<p align="center">
+  <img src="docs/media/starry-night-preview.gif" alt="The Starry Night animated in Metal" width="680" /><br />
+  <sub><em>The Starry Night</em> · Vincent van Gogh, 1889 — 24-second Metal loop (4 fps preview; wallpapers render at 30 fps)</sub>
+</p>
 
-The app has **15 paintings**, an infinitely scrolling gallery, live previews for every painting, and a black-and-white app icon adapted from *The Starry Night*. The interface supports English, Simplified Chinese, and Traditional Chinese.
+---
 
-![The Starry Night, rendered by the current Metal engine](docs/media/starry-night-preview.gif)
+## The Collection
 
-## Browse the collection
+StarryNight ships with **15 paintings** in an infinitely scrolling native gallery. Every painting has its own Metal motion field and subject mask, so movement stays inside the sky, water, or light while foreground subjects hold still. The interface supports English, 简体中文, and 繁體中文.
 
-Scroll or drag in either direction without reaching an end. Select a thumbnail or use the arrow keys to move between paintings. Once a selection settles, its live preview starts; neighboring cards remain still.
-
-![Twelve paintings from the v0.3.0 collection](docs/media/painting-collection.gif)
-
-The collection GIF shows the twelve paintings in v0.3.0; the three newer paintings are not shown. The GIFs above show complete 24-second loops at the default speed and intensity. They are captured from the production Metal renderer, reduced to 4 fps for the README. Wallpaper videos render at 30 fps. These are renderer captures, not recordings of macOS lock-screen playback.
-
-| Painting | Artist · year | Motion and protected subjects | Shortcut |
-| --- | --- | --- | --- |
-| The Starry Night | Vincent van Gogh · 1889 | Flowing sky brushwork; cypress, hills, and village stay still. | ⌘1 |
-| Water Lilies | Claude Monet · 1906 | Water and reflections ripple; main lily clusters stay still. | ⌘2 |
-| Stacks of Wheat (Sunset, Snow Effect) | Claude Monet · 1890–1891 | Warm sky areas change in brightness; stacks, snow, and all geometry stay still. | ⌘3 |
-| Starry Night over the Rhône | Vincent van Gogh · 1888 | River and light reflections shimmer; shore, mast, and figures stay still. | ⌘4 |
-| Wheat Field with Cypresses | Vincent van Gogh · 1889 | Clouds and wheat move; main cypress and middle hills stay still. | ⌘5 |
-| Impression, Sunrise | Claude Monet · 1872 | Water and orange reflections ripple; sun, boats, figures, and harbor stay still. | ⌘6 |
-| Waterloo Bridge, Sunlight Effect | Claude Monet · 1903 | River and arch reflections move; bridge and skyline stay still. | ⌘7 |
-| Nocturne: Blue and Silver, Bognor | James McNeill Whistler · 1871–1876 | Sea swells slowly; horizon, sailboats, beach figures, and shore stay still. | ⌘8 |
-| Approach to Venice | J. M. W. Turner · 1844 | Lagoon shimmers; sky, city, gondolas, and rigging stay still. | ⌘9 |
-| Cliff Walk at Pourville | Claude Monet · 1882 | Clouds, exposed sea, and grass move separately; figures, parasol, paths, and cliffs stay still. | ⌘0 |
-| The Bridge at Villeneuve-la-Garenne | Alfred Sisley · 1872 | River currents move; bridge, boats, buildings, and people stay still. | ⌥⌘1 |
-| The Houses of Parliament, Sunset | Claude Monet · 1903 | Short reflection strokes move; architecture, boats, sky, and signature stay still. | ⌥⌘2 |
-| The Scream | Edvard Munch · 1893 | Sky bands ripple; figures, bridge, and fjord stay still. | ⌥⌘3 |
-| Circular Forms | Robert Delaunay · 1930 | Three color groups turn; the outer composition stays still. | ⌥⌘5 |
-| Color Study: Squares with Concentric Circles | Wassily Kandinsky · 1913 | Circles turn in a staggered rhythm; the grid stays still. | ⌥⌘6 |
-
-Each painting has its own motion field and subject mask. *Stacks of Wheat* uses a local brightness change rather than displacement, so its motion is intentionally quieter.
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/media/water-lilies.gif" alt="Water Lilies" width="100%" /><br />
+      <sub><strong>Water Lilies</strong> · Claude Monet, 1906<br />Pond ripples around anchored lily pads</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/media/rhone.gif" alt="Starry Night over the Rhône" width="100%" /><br />
+      <sub><strong>Starry Night over the Rhône</strong> · Vincent van Gogh, 1888<br />Gaslight reflections shimmering across the river</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/media/cypresses.gif" alt="Wheat Field with Cypresses" width="100%" /><br />
+      <sub><strong>Wheat Field with Cypresses</strong> · Vincent van Gogh, 1889<br />Drifting clouds and wind across the wheat field</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/media/wheat-stacks.gif" alt="Stacks of Wheat" width="100%" /><br />
+      <sub><strong>Stacks of Wheat (Sunset, Snow Effect)</strong> · Claude Monet, 1890–1891<br />Subtle sky luminance shift without geometric warp</sub>
+    </td>
+  </tr>
+</table>
 
 <details>
-<summary>View four more full-size motion previews</summary>
+<summary><strong>Browse all 15 paintings &amp; shortcuts</strong></summary>
 
-### Water Lilies
+<p align="center">
+  <img src="docs/media/painting-collection.gif" alt="Collection overview" width="690" /><br />
+  <sub>Overview of the first 12 paintings from v0.3.0; v0.4.0 adds <em>The Scream</em>, <em>Circular Forms</em>, and <em>Color Study</em>.</sub>
+</p>
 
-![Water Lilies, current water motion](docs/media/water-lilies.gif)
-
-### Stacks of Wheat
-
-![Stacks of Wheat, current local sky brightness](docs/media/wheat-stacks.gif)
-
-### Starry Night over the Rhône
-
-![Starry Night over the Rhône, current reflections](docs/media/rhone.gif)
-
-### Wheat Field with Cypresses
-
-![Wheat Field with Cypresses, current cloud and wheat motion](docs/media/cypresses.gif)
+| Painting | Artist · Year | Motion | Shortcut |
+| --- | --- | --- | --- |
+| The Starry Night | Vincent van Gogh · 1889 | Swirling sky brushwork; cypress, hills, and village anchored | `⌘1` |
+| Water Lilies | Claude Monet · 1906 | Rippling pond and reflections; lily clusters anchored | `⌘2` |
+| Stacks of Wheat (Sunset, Snow Effect) | Claude Monet · 1890–1891 | Gentle warm-sky luminance shift; geometry completely still | `⌘3` |
+| Starry Night over the Rhône | Vincent van Gogh · 1888 | Shimmering river reflections; shore, mast, and couple still | `⌘4` |
+| Wheat Field with Cypresses | Vincent van Gogh · 1889 | Moving clouds and wheat; cypress and mid-hills still | `⌘5` |
+| Impression, Sunrise | Claude Monet · 1872 | Water and orange reflections; sun, boats, and harbor still | `⌘6` |
+| Waterloo Bridge, Sunlight Effect | Claude Monet · 1903 | Flowing river and arch reflections; bridge and skyline still | `⌘7` |
+| Nocturne: Blue and Silver, Bognor | James McNeill Whistler · 1871–1876 | Slow sea swell; horizon, sailboats, and shore still | `⌘8` |
+| Approach to Venice | J. M. W. Turner · 1844 | Shimmering lagoon; sky, city, and gondolas still | `⌘9` |
+| Cliff Walk at Pourville | Claude Monet · 1882 | Separate cloud, sea, and grass currents; figures and cliffs still | `⌘0` |
+| The Bridge at Villeneuve-la-Garenne | Alfred Sisley · 1872 | River currents; bridge, boats, and buildings still | `⌥⌘1` |
+| The Houses of Parliament, Sunset | Claude Monet · 1903 | Short water reflection strokes; architecture and sky still | `⌥⌘2` |
+| The Scream | Edvard Munch · 1893 | Rippling sky bands; figures, bridge, and fjord still | `⌥⌘3` |
+| Circular Forms | Robert Delaunay · 1930 | Three rotating color groups; outer composition still | `⌥⌘5` |
+| Color Study: Squares with Concentric Circles | Wassily Kandinsky · 1913 | Staggered turning rings; square grid still | `⌥⌘6` |
 
 </details>
 
-## Get the app
+---
 
-StarryNight requires **macOS 26 and an Apple Silicon Mac**.
+## Desktop Lyrics
 
-1. Download the ZIP archive from [GitHub Releases](https://github.com/Rosemary1812/starry-night-wallpaper/releases).
-2. Extract it and move `Starry Night.app` into Applications.
-3. Open the app. If macOS blocks it, Control-click it in Finder and choose **Open**.
+An opt-in Apple Music companion overlay that floats pure typography directly on your desktop—no background box, just spring-animated lines synced to the current track.
 
-Release archives include a SHA-256 checksum file. [v0.4.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.4.0) includes all 15 paintings and desktop lyrics.
+<p align="center">
+  <img src="docs/media/desktop-lyrics.gif" alt="Desktop lyrics scrolling between lines" width="680" />
+</p>
 
-This is an experimental extension that uses private macOS APIs. Builds use an ad hoc signature, are not notarized, and are not intended for the Mac App Store. macOS updates may affect extension compatibility.
+- **Automatic matching**: Opt in to fetch synchronized lyrics from [LRCLIB](https://lrclib.net/) using exact recording lookup with title/artist fallback. Network lookup stays off until you enable it.
+- **Offline & manual LRC**: Fetched lyrics and per-track timing offsets are cached locally, and manually imported `.lrc` files always take priority.
+- See [docs/automatic-lyrics.md](docs/automatic-lyrics.md) for setup, privacy details, and matching rules.
 
-## Set your wallpaper
+---
 
-1. Open the app and choose a painting.
-2. Click **Adjust…** to set the motion speed and intensity.
-3. Click **Set Wallpaper** and wait for rendering to finish.
-4. Open **System Settings → Wallpaper** and choose **StarryNight** if macOS has not selected it.
+## Quick Start
 
-On first use, open Wallpaper Settings once so macOS can initialize the extension. The app prepares the selected painting's video and tells the extension that a new render is available.
+Requires **macOS 26** and an **Apple Silicon Mac**.
 
-Changing a painting or a slider updates the preview. Click **Set Wallpaper** again to update the system wallpaper. Preview-only messages are hidden; rendering progress and the applied wallpaper state appear when relevant.
+1. **Download** the latest ZIP archive from [GitHub Releases](https://github.com/Rosemary1812/starry-night-wallpaper/releases) ([v0.4.0](https://github.com/Rosemary1812/starry-night-wallpaper/releases/tag/v0.4.0) includes all 15 paintings, desktop lyrics, and SHA-256 checksums).
+2. **Install** by extracting `Starry Night.app` into `/Applications`. If Gatekeeper prompts on first launch, Control-click the app in Finder and choose **Open**.
+3. **Apply**: Pick a painting, fine-tune speed or intensity in **Adjust…**, and click **Set Wallpaper**. On first use, open **System Settings → Wallpaper** once and select **StarryNight** so macOS initializes the extension.
 
-### Adjust the preview
+> **Experimental build**: StarryNight uses private macOS wallpaper extension APIs, is ad hoc signed (not notarized), and is not distributed through the Mac App Store. Future macOS updates may affect extension compatibility.
 
-| Control | Behavior |
+### Controls & Export
+
+| Feature | Details |
 | --- | --- |
-| Speed | 0.25× to 2×. A loop lasts 24 seconds at 1×, 96 seconds at 0.25×, or 12 seconds at 2×. |
-| Intensity | 0% to 250%; the default is 140%. At 0%, displacement and animated brightness are off. |
-| Pause Preview | Pauses this window's animation. System wallpaper playback continues. |
-| Show motion mask | Temporarily highlights the animated regions in the preview. |
-| Language | Follow System, English, 简体中文, or 繁體中文. Your choice persists after relaunch. |
+| **Speed** | `0.25×` – `2×` (a full loop is 24 s at `1×`, 96 s at `0.25×`, 12 s at `2×`) |
+| **Intensity** | `0%` – `250%` (default `140%`; `0%` pauses displacement and light shift) |
+| **Preview tools** | **Pause Preview** freezes only the window; **Show motion mask** highlights animated regions |
+| **Appearance & Language** | Follows macOS Light/Dark mode and Reduce Motion; supports System, English, 简体中文, and 繁體中文 |
+| **Video Export** | Open **… → Export Video…** to save a 30 fps looping H.264 MP4 at 3840 px width matching your main display's aspect ratio (**Set Wallpaper** renders at 2560 px wide, cropped to fill without stretching) |
 
-The gallery follows macOS light and dark appearance and Reduce Motion. Wide windows put the caption beside the painting; narrow windows put it below. The app appears in the Dock with its monochrome icon.
+---
 
-### Export a video
+<details>
+<summary><strong>Troubleshooting</strong></summary>
 
-Open the **…** menu and choose **Export Video…**. Export saves a looping H.264 MP4 at 30 fps, using the selected speed and intensity. It uses a 3840-pixel width and the main screen's aspect ratio. Export does not apply a wallpaper.
+| Symptom | What to do |
+| --- | --- |
+| App asks to open Wallpaper Settings first | Open **System Settings → Wallpaper** once, then return and click **Set Wallpaper**. |
+| Render finishes, but desktop wallpaper didn't change | Select **StarryNight** in **System Settings → Wallpaper**. Preview tweaks alone don't update the desktop. |
+| Center painting moves, neighboring thumbnails don't | Expected—only the settled selection runs a live Metal preview. |
+| Motion looks very subtle | Raise **Intensity** in **Adjust…**. *Stacks of Wheat* intentionally uses a quiet luminance shift rather than displacement. |
+| Buttons are briefly disabled | Wait for video rendering or carousel scrolling to settle. |
+| Source build reports missing image or seed video | Verify filenames in `assets/` or the directory set in `STARRY_ASSETS_DIR`. |
 
-**Set Wallpaper** renders at a 2560-pixel width with the same screen aspect ratio. Both paths crop the painting to fill the output; the app does not stretch the painting. The **…** menu also contains artwork details, sources and licenses, and Wallpaper Settings.
+</details>
 
-## Build the current source
+<details>
+<summary><strong>Build from source &amp; CLI rendering</strong></summary>
 
-You need macOS 26, Apple Silicon, Xcode Command Line Tools, and the artwork assets. The app and extension use Swift, AppKit, Metal, and AVFoundation. Building the app does not require Python or FFmpeg.
+Requires macOS 26, Apple Silicon, and Xcode Command Line Tools (`Swift`, `AppKit`, `Metal`, `AVFoundation`—no Python or FFmpeg needed to build).
 
 ```sh
 git clone --branch main https://github.com/Rosemary1812/starry-night-wallpaper.git
 cd starry-night-wallpaper
-xcode-select --install
+xcode-select --install   # skip if already installed
 mkdir -p assets
 ```
 
-Skip `xcode-select --install` if the tools are already installed.
-
-Put a legally usable reproduction of *The Starry Night* at `assets/starrynight.jpg`. A [public-domain reproduction on Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg) is one option. Download a reduced-size version rather than the very large original file.
-
-Download the other fourteen images:
+Place a reproduction of *The Starry Night* (for example, a reduced-size [public-domain copy from Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg)) at `assets/starrynight.jpg`, then fetch the remaining 14 paintings:
 
 ```sh
 zsh scripts/fetch-artworks.sh
 ```
 
-The full extension build also needs a seed loop at `assets/starry-night-flow.mp4`. If you do not have one, build the control panel first and use its renderer to create the loop:
+Generate the seed loop and build both the app and wallpaper extension:
 
 ```sh
 STARRY_SKIP_EXTENSION_BUILD=1 zsh build.sh
 "./Starry Night.app/Contents/MacOS/StarryNight" \
-	--export "$PWD/assets/starry-night-flow.mp4" 2560 1600
+  --export "$PWD/assets/starry-night-flow.mp4" 2560 1600
 zsh build.sh
 open "Starry Night.app"
 ```
 
-The first command creates a preview app. The final build includes the wallpaper extension and signs both bundles. Build output stays in the repository; the scripts do not install the app or apply a wallpaper.
+Set `STARRY_ASSETS_DIR` if you store source images and `starry-night-flow.mp4` outside `assets/`.
 
-To keep the images and seed movie elsewhere, set `STARRY_ASSETS_DIR` before downloading and building. For the export command, use the seed movie path in that directory as well. Full-size source images and videos are ignored by Git; reduced documentation media is tracked.
+#### Command-line rendering
 
-### Render from the command line
-
-Use the artwork's filename without `.jpg` for `--artwork`. Create `dist/` before running these examples:
+Pass the painting's filename without `.jpg` to `--artwork`:
 
 ```sh
 mkdir -p dist
-"./Starry Night.app/Contents/MacOS/StarryNight" \
-	--snapshot "$PWD/dist/rhone.png" 8 --artwork rhone
-"./Starry Night.app/Contents/MacOS/StarryNight" \
-	--export "$PWD/dist/rhone.mp4" 1920 1080 --artwork rhone
+"./Starry Night.app/Contents/MacOS/StarryNight" --snapshot "$PWD/dist/rhone.png" 8 --artwork rhone
+"./Starry Night.app/Contents/MacOS/StarryNight" --export "$PWD/dist/rhone.mp4" 1920 1080 --artwork rhone
 ```
 
-Snapshots use the painting's aspect ratio. Command-line video export uses a 24-second loop at speed 1× and intensity 140%. It does not publish the video to the extension.
+</details>
 
-## Troubleshoot
+<details>
+<summary><strong>Verification, README media &amp; code map</strong></summary>
 
-| Symptom | What to do |
-| --- | --- |
-| The app asks you to open Wallpaper Settings first. | Open **System Settings → Wallpaper** once, then return to the app and click **Set Wallpaper**. |
-| Rendering finishes but the desktop still shows the previous wallpaper. | Select **StarryNight** in Wallpaper Settings. Preview changes alone do not update the desktop. |
-| The preview moves but a neighboring painting does not. | Select that painting. Only the settled selection has a live Metal preview. |
-| Some motion is hard to see. | Increase intensity in **Adjust…**. Wheat stacks use a restrained brightness change; objects remain fixed. |
-| Selection or action buttons are temporarily disabled. | Wait for video rendering to finish or for the carousel selection to settle. |
-| A source build reports a missing image or seed video. | Check the filenames in `assets/`, or the directory specified by `STARRY_ASSETS_DIR`. |
-
-The applied status reports whether the provider is selected in macOS settings. It is not proof of playback on every display, Space, or lock screen.
-
-## Verify and contribute
-
-With the source assets available, run:
+Run gallery, localization, and Metal loop verification (with source assets present):
 
 ```sh
 STARRY_VERIFY_EXPECTED_ARTWORK_COUNT=15 zsh scripts/verify-gallery.sh
 ```
 
-This rebuilds the control panel, checks localization, runs the carousel's motion assertions, captures AppKit layouts, and checks native Metal loop endpoints, movement, and protected-subject sample points for all 15 paintings. Evidence goes into `dist/gallery-evidence/` and `dist/evidence/`. Protected-point checks do not prove that every silhouette pixel is fixed.
-
-To check visible live previews and the wrap between the last and first paintings:
+Check visible GPU live previews and carousel wrap-around:
 
 ```sh
 STARRY_VERIFY_LIVE_PREVIEW=1 \
-	"./Starry Night.app/Contents/MacOS/StarryNight" \
-	--ui-check "$PWD/dist/live-preview-evidence"
+  "./Starry Night.app/Contents/MacOS/StarryNight" \
+  --ui-check "$PWD/dist/live-preview-evidence"
 ```
 
-This opens a window and checks completed GPU frames for every painting. Offscreen AppKit snapshots use a still fallback because `cacheDisplay` cannot capture Metal presentation layers. These checks do not apply wallpaper or verify lock-screen playback.
-
-To regenerate the README GIFs, install Pillow in your Python environment and run:
+Regenerate README GIFs (details and attribution in [docs/media/README.md](docs/media/README.md)):
 
 ```sh
 python3 -m pip install Pillow
 zsh scripts/record-readme-media.sh
 ```
 
-Set `STARRY_PYTHON` if Pillow is installed in a different interpreter. Capture settings, media attribution, and output sizes are documented in [docs/media/README.md](docs/media/README.md).
+Before adding a painting or tuning its motion, read the [painting wallpaper authoring guide](.agents/skills/author-painting-wallpaper/SKILL.md).
 
-Start with the [painting wallpaper authoring skill](.agents/skills/author-painting-wallpaper/SKILL.md) before adding a painting or changing its motion. It covers image rights, subject masks, gallery integration, and native rendering evidence.
-
-### Code map
-
-| File or directory | Responsibility |
+| Path | Responsibility |
 | --- | --- |
-| `Artwork.swift` | Painting IDs, filenames, crops, years, and shortcuts. |
-| `StarryNight.swift` and `Sky.metal` | Native preview, masks, motion, video export, and app lifecycle. |
-| `GalleryView.swift` and `CarouselMotion.swift` | Gallery drawing, controls, input, and infinite scrolling. |
-| `L10n.swift` and the three `.lproj` directories | Language selection and localized strings. |
-| `WallpaperBridge.swift` | Publishes renders to the extension's local video library. |
-| `WallpaperExtension/` | Native wallpaper provider and video playback. |
-| `Icons/` and `Fonts/` | App icon and bundled interface font. |
-| `scripts/` | Builds, asset downloads, capture tools, and verification. |
+| `Artwork.swift` | Painting IDs, filenames, crops, years, and shortcuts |
+| `StarryNight.swift`, `Sky.metal` | Metal renderer, masks, motion fields, video export, app lifecycle |
+| `GalleryView.swift`, `CarouselMotion.swift` | Native gallery UI, controls, input, and infinite carousel |
+| `DesktopLyrics.swift` | Apple Music desktop lyrics overlay and spring motion |
+| `L10n.swift`, `*.lproj/` | Language selection and localized strings |
+| `WallpaperBridge.swift`, `WallpaperExtension/` | Render handoff and macOS wallpaper playback extension |
+| `Icons/`, `Fonts/` | Monochrome app icon and bundled Source Serif 4 |
+| `scripts/` | Build, asset fetch, media capture, and verification scripts |
 
-## Credits and licenses
+</details>
 
-Code is licensed under MIT. The wallpaper extension derives from [Phosphene](https://github.com/kageroumado/phosphene), and the app bundles Adobe Source Serif 4 under the SIL Open Font License.
+---
 
-Painting reproductions have their own terms. In particular, the *Waterloo Bridge* reproduction and its animated derivatives retain **CC BY-SA 4.0**, credited to Claude Monet / Art Institute of Chicago, via Wikimedia Commons uploader Maltaper. The collection GIF includes that derivative. Read [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) before redistributing artwork media.
+## Credits & Licenses
 
-## Desktop lyrics
-
-![Desktop lyrics scrolling between lines](docs/media/desktop-lyrics.gif)
-
-Native lyrics view with invented text on a solid background for this recording. The desktop overlay itself has no background panel.
-
-The app includes an opt-in Apple Music companion overlay with automatic,
-strict recording matching through LRCLIB, offline lyric/offset storage and manual
-LRC fallback. If an exact lookup misses, the app searches by title and artist and checks candidates for a matching recording. Automatic network lookup is off until you enable its explicit menu
-setting. The overlay paints only text, not a background panel. See
-[setup, privacy, matching and verification](docs/automatic-lyrics.md), or open the
-[offline style comparison](docs/lyrics-style-preview.html). The latter is a web
-style simulation, not native macOS compositing verification.
+- **Code**: [MIT License](LICENSE). The wallpaper extension builds on [Phosphene](https://github.com/kageroumado/phosphene), and the bundled Adobe Source Serif 4 font uses the SIL Open Font License.
+- **Artwork**: Painting reproductions carry their own terms—see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). In particular, *Waterloo Bridge, Sunlight Effect* and its animated derivatives (including `painting-collection.gif`) are distributed under **CC BY-SA 4.0** (Claude Monet / Art Institute of Chicago, via Wikimedia Commons uploader Maltaper).
